@@ -1,0 +1,318 @@
+{
+ "schema": 1,
+ "date": "2026-11-03",
+ "tested": {
+  "macos_version": "26.7.2",
+  "macos_builds": [
+   "25G332"
+  ],
+  "pci_ids": {
+   "8086": "A7A0",
+   "10DE": "2D98"
+  },
+  "note": "What was last tested, on one machine: fetch takes the latest of each branch unless told --tested. A clean install following these scripts has never been done."
+ },
+ "forks": {
+  "nvidia-macos-driver": {
+   "url": "https://github.com/Thatisjigen/nvidia-macos-driver.git",
+   "ref": "acer/current",
+   "license": "PolyForm Noncommercial 1.0.0; translator LGPL-3.0",
+   "tested_commit": "56222b00a651fde5ad519dd139123f20e0f62d70"
+  },
+  "WhateverXe": {
+   "url": "https://github.com/Thatisjigen/WhateverXe.git",
+   "ref": "acer/current",
+   "license": "BSD-3-Clause",
+   "tested_commit": "db866320fab5381600679e5ebd453ee84a6af9ac"
+  },
+  "nvenc": {
+   "url": "https://github.com/Thatisjigen/nvenc.git",
+   "ref": "acer/current",
+   "license": "MIT",
+   "tested_commit": "ce664134dfcf668325ccf2cd33d2cc66e44e8833"
+  },
+  "NitroSense-macOS": {
+   "url": "https://github.com/Thatisjigen/NitroSense-macOS.git",
+   "ref": "acer/current",
+   "license": "GPL-3.0",
+   "tested_commit": "6ff1e5fa28870e88bdc3965d7fc73f9e14358c78"
+  },
+  "SMCNvidiaGPU": {
+   "url": "https://github.com/Thatisjigen/SMCNvidiaGPU.git",
+   "ref": "acer/current",
+   "license": "MIT",
+   "tested_commit": "9f8b8bcedb30e71cd192b6aec44a5182dddd8995"
+  },
+  "LatSOF-Audio": {
+   "url": "https://github.com/Thatisjigen/LatSOF-Audio.git",
+   "ref": "acer/current",
+   "license": "MIT",
+   "tested_commit": "f910d5336c79207174968074c307f62a18b9769b"
+  },
+  "AppleALC": {
+   "url": "https://github.com/Thatisjigen/AppleALC.git",
+   "ref": "acer/current",
+   "license": "BSD-3-Clause",
+   "tested_commit": "e4d0bd7ca18e48235c44ec1037da3f6addbe0d21"
+  },
+  "HybridPM": {
+   "url": "https://github.com/Thatisjigen/HybridPM.git",
+   "ref": "main",
+   "license": "Thou Shalt Not Profit 1.0",
+   "tested_commit": "cc717cdf174b47e7f14faa8b0350c2227543930b"
+  },
+  "SimpleMtkWlan": {
+   "url": "https://github.com/Thatisjigen/SimpleMtkWlan.git",
+   "ref": "acer/current",
+   "tested_commit": "0583491cd2aca833876c254831e1618df2d48507",
+   "license": "GPL-2.0"
+  },
+  "SimpleMtkBtFw": {
+   "url": "https://github.com/Thatisjigen/SimpleMtkBtFw.git",
+   "ref": "acer/current",
+   "tested_commit": "b4c94ba733900db42652c0dafd30260eadb881e2",
+   "license": "GPL-3.0"
+  }
+ },
+ "git_deps": {
+  "MacKernelSDK": {
+   "url": "https://github.com/acidanthera/MacKernelSDK.git",
+   "commit": "3f750085caa17ec3a7880f11c11bf4f48cd6a164",
+   "full": true
+  },
+  "open-gpu-kernel-modules": {
+   "url": "https://github.com/NVIDIA/open-gpu-kernel-modules.git",
+   "tag": "615.78.08",
+   "commit": "1a82fbfda8f321b056eb3568850f9316c5e465c5"
+  },
+  "open-gpu-kernel-modules-610": {
+   "url": "https://github.com/NVIDIA/open-gpu-kernel-modules.git",
+   "tag": "610.57.04",
+   "sparse": [
+    "src/common/sdk/nvidia/inc",
+    "src/nvidia/arch/nvalloc/unix/include"
+   ],
+   "commit": "e4a5faa2567f28c8eabe0ebb6422b6d0abcf37eb"
+  },
+  "open-gpu-doc": {
+   "url": "https://github.com/NVIDIA/open-gpu-doc.git",
+   "commit": "9fdf5c4062007929d9f4e6cbad9c9771fe61b880",
+   "sparse": [
+    "classes/video"
+   ]
+  },
+  "NvGfx": {
+   "url": "https://github.com/watchthelight-labs/NvGfx.git",
+   "commit": "1d49a85bf60d9c4b95fa4e06a5ca79c416c84d37",
+   "sparse": [
+    "build/nvgfx/nvrm"
+   ]
+  },
+  "VirtualSMC": {
+   "url": "https://github.com/acidanthera/VirtualSMC.git",
+   "commit": "b5c62c2311540c529c00996d0d9cec33f8e571c9",
+   "sparse": [
+    "VirtualSMCSDK"
+   ]
+  }
+ },
+ "downloads": {
+  "nullmoth": {
+   "file": "nullmoth-nvidia-2.7.2.tar.gz",
+   "url": "https://github.com/nullmoth/nvidia-macos-driver/releases/download/v2.7.2/nullmoth-nvidia-2.7.2.tar.gz",
+   "sha256": "928557fece27637b1184f5655833566e7d516b22708cc341b28d555055d8e50e",
+   "license": "PolyForm Noncommercial 1.0.0, Mesa, NVIDIA firmware licence: licenses/ in the package",
+   "sums_sha256": "f270c7753f2a9673e8d9e0680edd71909fa90454966409dfa22393c320f5ab54"
+  },
+  "graphics": {
+   "file": "WhateverXe-Graphics-0.4.0.pkg",
+   "url": "https://github.com/b00t0x/WhateverXe-Graphics/releases/download/v0.4.0/WhateverXe-Graphics-0.4.0.pkg",
+   "sha256": "7a1b5015b3e6e8b522f26c25df85c313471c9142564a0b57356cddd2c88b9510",
+   "license": "BSD-2-Clause for its tools; the payload is modified Apple drivers, which is why this repository only points at it"
+  },
+  "posh_patch": {
+   "file": "posh_patch.sh",
+   "url": "https://raw.githubusercontent.com/Thatisjigen/WhateverXe-Graphics/fd09cb62485341de65d82ff2c4c4eb10686c530c/tools/posh_patch.sh",
+   "sha256": "c56360e1f3a3dad5c474746b8aea2c9a7c9ba7c5021b21a4d2816a01501e86c3",
+   "license": "BSD-2-Clause"
+  },
+  "lilu_debug": {
+   "file": "lilu-debug.zip",
+   "url": "https://github.com/acidanthera/Lilu/releases/download/1.7.2/Lilu-1.7.2-DEBUG.zip",
+   "sha256": "e95df95d82e8b151047abf359ecd9c853755c59293e19dfcc3907da8fbd8cf89",
+   "license": "BSD-3-Clause"
+  },
+  "sof": {
+   "file": "sof-bin-2026.09.2.tar.gz",
+   "url": "https://github.com/thesofproject/sof-bin/releases/download/v2026.09.2/sof-bin-2026.09.2.tar.gz",
+   "sha256": "5f7bc30b2b5c1e6b0da55a33fc44e2b7f56ae9b06952edcde614f51ef6b943e1",
+   "member": "sof-bin-2026.09.2/sof/intel-signed/sof-adl.ri",
+   "member_sha256": "294e5a51b1d3fc4ceda57780927c2a2ec95bb5d23477f879a9fb648c6c01cb30",
+   "license": "Intel firmware licence: LICENCE.Intel in the package; embedded at link time, never published here"
+  },
+  "mesa_include": {
+   "file": "mesa-17ca6174-include.tar.gz",
+   "url": "https://gitlab.freedesktop.org/mesa/mesa/-/archive/17ca6174/mesa-17ca6174.tar.gz?path=include",
+   "strip": "mesa-17ca6174-include",
+   "check_member": "include/vulkan/vulkan_core.h",
+   "license": "MIT and Khronos",
+   "tree_sha256": "4ba8e0ad53b679e46a5cb2c508c7e847e4d11d32ef78be07d68e168e461d2b8c"
+  },
+  "webkit_cmbase": {
+   "file": "CMBaseObjectSPI.h",
+   "url": "https://raw.githubusercontent.com/WebKit/WebKit/3bfbc200370710495ffa440abdd31b943c83ad7a/Source/ThirdParty/libwebrtc/Source/webrtc/webkit_sdk/WebKit/CMBaseObjectSPI.h",
+   "sha256": "2e30b39dadff06145a1dfc29f735b9067eb99d08151a7fe8b9464803df784a62",
+   "dest": "webkit-spi/CMBaseObjectSPI.h",
+   "license": "BSD"
+  },
+  "webkit_vtdec": {
+   "file": "VTVideoDecoderSPI.h",
+   "url": "https://raw.githubusercontent.com/WebKit/WebKit/3bfbc200370710495ffa440abdd31b943c83ad7a/Source/ThirdParty/libwebrtc/Source/webrtc/webkit_sdk/WebKit/VTVideoDecoderSPI.h",
+   "sha256": "3d3f58450ba71ec689a50dfab37d3d84e3d7e686c20b01d5892300866030092f",
+   "dest": "webkit-spi/VTVideoDecoderSPI.h",
+   "license": "BSD"
+  },
+  "ngshim_src": {
+   "file": "ngshim.m",
+   "url": "https://raw.githubusercontent.com/umeow0716/NootedGreen/cf0760e5592db7c3dd5f6caf7a7cc69d1050c4d6/NGShim/ngshim.m",
+   "sha256": "cf7e92521c7c9ae54c9facc55077c227bd2a3b317ee3b7bac3f2fd5ed3bbf077",
+   "dest": "ngshim/ngshim.m",
+   "license": "Thou Shalt Not Profit 1.0"
+  },
+  "mt7920_patch": {
+   "file": "WIFI_MT7961_patch_mcu_1a_2_hdr.bin",
+   "url": "https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git/plain/mediatek/WIFI_MT7961_patch_mcu_1a_2_hdr.bin?id=87414f9ba8f875cb733281652474bccf93313e2f",
+   "sha256": "a766c4e39815e554c80ce5b1596095ff283a60db93356679fecd6494f71cee23",
+   "dest": "mt7920/WIFI_MT7961_patch_mcu_1a_2_hdr.bin",
+   "license": "MediaTek firmware licence (LICENCE.mediatek in linux-firmware): redistributable with MediaTek chips, but not under the GPL; embedded in the kext on your machine, never published here"
+  },
+  "mt7920_ram": {
+   "file": "WIFI_RAM_CODE_MT7961_1a.bin",
+   "url": "https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git/plain/mediatek/WIFI_RAM_CODE_MT7961_1a.bin?id=87414f9ba8f875cb733281652474bccf93313e2f",
+   "sha256": "3edec74ffe341b917e7fa4ddb2b68851411f2416555f10619a5900fa4b141e6c",
+   "dest": "mt7920/WIFI_RAM_CODE_MT7961_1a.bin",
+   "license": "MediaTek firmware licence (LICENCE.mediatek in linux-firmware): redistributable with MediaTek chips, but not under the GPL; embedded in the kext on your machine, never published here"
+  },
+  "mtkbt_zip": {
+   "file": "SimpleMtkBtFw-1.1.0-DEBUG.zip",
+   "url": "https://github.com/flxxxxddd/SimpleMtkBtFw/releases/download/v1.1.0/SimpleMtkBtFw-1.1.0-DEBUG.zip",
+   "sha256": "77033ec72f182c14bb4be51809a7d1f017f92a6b6f36bab44f094faca1df656d",
+   "dest": "mtkbt/SimpleMtkBtFw-1.1.0-DEBUG.zip",
+   "license": "GPL-3.0; only the Info.plist of the patcher is taken from it"
+  }
+ },
+ "build_env": {
+  "RUST_VERSION": "1.98.1",
+  "MKSDK_COMMIT": "3f750085caa17ec3a7880f11c11bf4f48cd6a164",
+  "OGKM_COMMIT": "1a82fbfda8f321b056eb3568850f9316c5e465c5",
+  "NVENC_VERSION": "v0.9.5-15-gce66413",
+  "NMHDA_DATE": "2026-11-01",
+  "WHATEVERXE_DATE": "2026-11-04",
+  "IDISPHDA_DATE": "2026-11-05"
+ },
+ "installed_files": {
+  "nullmoth_decoders": {
+   "libnvdec_h264.dylib": "6068bacc3ef379c87985d28e4e177bd5b0b28f09c4263c4e786bc4bd3d3f16d0",
+   "libnvdec_hevc.dylib": "64b2353a900dc8bb6feb6c4b0037b948bdcb5d568d4573693cc56f3b7ba1e537"
+  },
+  "nvk_in": "58f1bf7961df16c0a30609e24a61a9294477d5a6f87d7011b54a199112cc37e5",
+  "nvk_out": "795c9be2c5c8b637a6d55269e8b85c5c08297c97fb8740238f262867e2894942",
+  "nvk_identifier": "libvulkan_nouveau-555549448e640fda53893efd8177ee5a14956359",
+  "graphics_metal_stock": "1e5e4f5bd76ff567a102125dfa3c74a255934d45c753a88aedcbfac7dab53c6c",
+  "graphics_metal_patched": "b24816e801f5c76d6ea0d2a9645d3fef3d1cd912e14060d6f4446780f413b422",
+  "nvk_patched_unsigned": "c43c7e266ae21d092ea2f004b1786519c302dea4e69d2c3028d43a2c835f26ec",
+  "graphics_impostor_stock": "cd415a30e111d9ad48e6dd1936d848c1e809821aa3770c93ae7c759a4454567c",
+  "graphics_descriptor": "fe6aa99b5a854373a261d8cfff634f890fa068f1965b4a220dd54bb93188d76b"
+ },
+ "aux_collection_ids": [
+  "com.nullmoth.NVRM",
+  "com.nullmoth.NVRMFB",
+  "com.nullmoth.NVAccel",
+  "com.nullmoth.NVRMAGDC",
+  "org.b00t0x.AppleIntelTGLCompat",
+  "com.apple.driver.AppleIntelTGLGraphics",
+  "com.apple.driver.AppleIntelTGLGraphicsFramebuffer",
+  "com.hackintosh.LatSOFAudio"
+ ],
+ "tested_binaries": {
+  "NVRM.kext/Contents/MacOS/NVRM": {
+   "sha256": "aae39ff9a5fd55685da4b3db91db890f85e7c1774493ff28aa4dcc0b2eeb869a"
+  },
+  "NVRMFB.kext/Contents/MacOS/NVRMFB": {
+   "sha256": "6c76c0608c36dc7851b5afe83ab5c4bf79c88d585cde40608272f9c54e984765"
+  },
+  "NVAccel.kext/Contents/MacOS/NVAccel": {
+   "sha256": "d8e44fbd4e9b23a9978c0831b6e9d91182fe795d49ba15766c118dcfde108863"
+  },
+  "NVRMAGDC.kext/Contents/MacOS/NVRMAGDC": {
+   "sha256": "33f606391c72fd6a1fdfe791e3db1fd91de16ed5549121b7adbf7a3c936a1f1e"
+  },
+  "NMHDA.kext/Contents/MacOS/NMHDA": {
+   "sha256": "d4787868e224da0f2f87b506108c7ccfd51529454e85c99f2f1cf256d222686b"
+  },
+  "bundle/NVMTLDriver": {
+   "sha256": "3a3d921d1329e3dbfcd0b7e3177727bc63f06d0cef75b0856dfd265769a72870"
+  },
+  "bundle/libnvmtl_translate.dylib": {
+   "sha256": "a42cf3e64a8ec8c6ffc688041456fe77821d253fb6c54788901e48170fb1ae88",
+   "reference_sha256": "443b1fd14f06235e5202032755ef422395afdea26b4932de1bf9922f8ebe1f4e",
+   "note": "same sources; what ran keeps the paths of the folder it was built in, here they read /build/translator"
+  },
+  "bundle/libnvencvt.dylib": {
+   "sha256": "a35a0dc3e39f05e5fbc924e19261eac7a1aac02adf08b02b9ee9b01fcb5e8cdd",
+   "reference_sha256": "2684e0c833eca47663dbb3bc851e82df18184d1b926144e80ec09f8f2addba95",
+   "note": "same code; what ran was built before one log line lost a code of the work log, with another version string, in another folder"
+  },
+  "LatSOFAudio.kext/Contents/MacOS/LatSOFAudio": {
+   "sha256": "49a1bb1231f0f7958ce9eb1ca12d6fdbf3bc18222a6a219fd5024e6cf176321c"
+  },
+  "NitroEC.kext/Contents/MacOS/NitroEC": {
+   "sha256": "1b7ea62dc898842a68c20918b9043bc5522574ad5fae29e088f9383eaf811e61"
+  },
+  "nitrosense/nitrod": {
+   "sha256": "3f9f5574be75778d65cb223e7a33c851ecc9db20f0dd0f32ac0940fb6dd1e172",
+   "reference_sha256": "c28c253363af057c0d6d9320dbfaa63456f8b6ac92edb7e65879962e6221620d",
+   "note": "same code; what runs still has the date of an EC dump in its texts, and the app a help line that pointed at the work log"
+  },
+  "nitrosense/nitroctl": {
+   "sha256": "5a3e0bb962c088e3b476d231ca3f438061e72d0716f302e1311e369adbfe9dcb",
+   "reference_sha256": "4edfe4c7e642839641b9b4eaed970e9bdc83f0e7109b0f9fd2d1d461bf6294c7",
+   "note": "same code; what runs still has the date of an EC dump in its texts, and the app a help line that pointed at the work log"
+  },
+  "nitrosense/NitroSense.app/Contents/MacOS/NitroSense": {
+   "sha256": "723bae134c1292f96a18ed6c1a68b420aff62ced9e8ac7fa3b3b62d18bfcadca",
+   "reference_sha256": "bf303e745700484bfb4fbf2f660f9a3519bd4b568aa2ba3300c93fb4a8e962b5",
+   "note": "same code; what runs still has the date of an EC dump in its texts, and the app a help line that pointed at the work log"
+  },
+  "SMCNvidiaGPU.kext/Contents/MacOS/SMCNvidiaGPU": {
+   "sha256": "02d33a32d4f34cf98b265bbc6436bc3cbc287b9c486df8afcd012e3ab34bfc3a"
+  },
+  "WhateverXe.kext/Contents/MacOS/WhateverXe": {
+   "sha256": "7fe22f142ce64c76993d4fac6ac725482c50c95e6aca22f9d17450f8aa8a2d28",
+   "sha256_without_uuid": "b2d8f4bd313b78616a36c658053b3e4b6cdaaf16441d1e2b60defa7ee953b221",
+   "note": "same code; what runs has the old names of its diagnostics, its IORegistry keys among them, and the UUID depends on the folder of the build",
+   "reference_sha256": "fc1664adbf6cab9339bda9a211ccab71f9c31fca0a48206923b5ae2781536306",
+   "reference_sha256_without_uuid": "ea316608eff49924eef2507c566129dd879714287785e0e43b7164573e1c92bd"
+  },
+  "HybridPM.kext/Contents/MacOS/HybridPM": {
+   "sha256": "217e1bf03127b5dc7d9fcb6ae76c7d6ff38f4f1990ea979fb2d80707db841fd0"
+  },
+  "AppleALC.kext/Contents/MacOS/AppleALC": {
+   "sha256": "b2860ae275fd537f7f95f5aab01add0d412c21fc270ea20be020a9bfe0cfc8b1"
+  },
+  "bundle/impostor.dylib": {
+   "sha256": "ce0b7248e2324e446b54d3ba6e27ab2e302637dedb5299b75e9ce6ab7e4863e4"
+  },
+  "IDispHDA.kext/Contents/MacOS/IDispHDA": {
+   "sha256": "d6e59bfcffcd7f9d362f42662a364eb85374b9520dc413d8971bdb79bcdee0cc"
+  },
+  "AirportMtkWlan.kext/Contents/MacOS/AirportMtkWlan": {
+   "sha256": "c43b79f0f61797de76236f53e6e0154ad3b6d7edb68e10734d9eac60a5d5ea54",
+   "reference_sha256": "acac535b41dfae445a4b13ed9c7f0f51635f399df4341dff1d4b06ee45442a46",
+   "note": "the one that ran carries the short commit of the local branch it was built from in its version string; built with that string it is the same file"
+  },
+  "SimpleMtkBtPatcher.kext/Contents/MacOS/SimpleMtkBtPatcher": {
+   "sha256": "a691f55ca145d378e1c1208790058b51b3d923a535ecbd472fe077ab48ef2371"
+  }
+ }
+}

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>DisplayProductID</key>
+	<integer>5395</integer>
+	<key>DisplayProductName</key>
+	<string>CSOT MNF601BA3-1 (15.6" FHD 180 Hz)</string>
+	<key>DisplayVendorID</key>
+	<integer>3703</integer>
+	<key>scale-resolutions</key>
+	<array>
+		<data>
+		AAAKAAAABaAAAAABAIAAAA==
+		</data>
+		<data>
+		AAALQAAABlQAAAABAIAAAA==
+		</data>
+		<data>
+		AAAMAAAABsAAAAABAIAAAA==
+		</data>
+		<data>
+		AAAMgAAABwgAAAABAIAAAA==
+		</data>
+	</array>
+</dict>
+</plist>
