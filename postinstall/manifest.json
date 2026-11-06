@@ -208,7 +208,8 @@
   "NVENC_VERSION": "v0.9.5-15-gce66413",
   "NMHDA_DATE": "2026-11-01",
   "WHATEVERXE_DATE": "2026-11-04",
-  "IDISPHDA_DATE": "2026-11-05"
+  "IDISPHDA_DATE": "2026-11-05",
+  "MTKBT_DATE": "2026-11-06"
  },
  "installed_files": {
   "nullmoth_decoders": {

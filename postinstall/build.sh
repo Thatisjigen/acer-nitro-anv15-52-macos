@@ -263,7 +263,7 @@ stage_hybridpm() {   # its own script, reproducible: on with -hpm in boot-args
 
 stage_applealc() {   # AppleALC 1.9.8 with ALC245 layouts 66 and 67. The steps follow AppleALC.xcodeproj, Release configuration
   local B=$OBJ/applealc VER=1.9.8 SDK=$LILU_SDK K S; export_tree "$SRC/AppleALC" "$B/AppleALC"; K=$(mksdk)/Headers; S=$B/AppleALC/AppleALC
-  export SOURCE_DATE_EPOCH=1790544554   # fixes Lilu's kextVersion (__DATE__/__TIME__)
+  local SOURCE_DATE_EPOCH=1790544554; export SOURCE_DATE_EPOCH   # fixes Lilu's kextVersion (__DATE__/__TIME__); local, so the stages after this one do not get it
   rm -rf "$B/bin" "$B/obj" "$B/out"; mkdir -p "$B/bin" "$B/obj" "$B/out/AppleALC.kext/Contents/MacOS"
   xcrun clang++ -std=c++14 -fobjc-arc -O2 -w "$B/AppleALC/ResourceConverter/main.mm" -framework Foundation -framework Cocoa -o "$B/bin/ResourceConverter"
   PROJECT_DIR="$B/AppleALC" TARGET_BUILD_DIR="$B/bin" bash -e "$B/AppleALC/ResourceConverter/generate.sh" > "$LOGS/applealc-generate.log" 2>&1 || { tail -20 "$LOGS/applealc-generate.log"; die "AppleALC resources"; }
@@ -376,6 +376,8 @@ PYPLIST
 stage_mtkbt() {   # the MT7920's Bluetooth patcher with USB buffers prepared read only; the Xcode Debug settings, the Info.plist of the v1.1.0 DEBUG release
   local B=$OBJ/mtkbt NAME=SimpleMtkBtPatcher BID=com.laobamac.SimpleMtkBtPatcher VERSION=1.1.0 K FLAGS
   export_tree "$SRC/SimpleMtkBtFw" "$B/src" SimpleMtkBtPatcher; K=$(mksdk)
+  # the date goes into Lilu's kextVersion: this one gives the binary that ran
+  local SOURCE_DATE_EPOCH; SOURCE_DATE_EPOCH=$(epoch "${MTKBT_DATE:?}"); export SOURCE_DATE_EPOCH
   rm -rf "${B:?}/obj" "${B:?}/$NAME.kext"; mkdir -p "$B/obj" "$B/$NAME.kext/Contents/MacOS"
   FLAGS=(-target x86_64-apple-macos10.12 -x c++ -std=gnu++14 -mkernel -fapple-kext -fno-rtti -fno-exceptions -fno-builtin -fno-common -nostdlib
     -fno-use-cxa-atexit -fno-asynchronous-unwind-tables -O0 -DKERNEL -DDEBUG=1 -DMODULE_VERSION=$VERSION -DPRODUCT_NAME=$NAME

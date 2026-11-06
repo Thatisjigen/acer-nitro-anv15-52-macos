@@ -893,7 +893,7 @@ def cmd_build(ctx):
     # These go into the binaries. For a commit that was tested they stay what they were, to give the same file; for a newer one they follow it
     if heads.get('nvenc') != forks['nvenc']['tested_commit']:
         env['NVENC_VERSION'] = 'v0.9.5-g' + heads['nvenc'][:7]
-    for fork, key in (('WhateverXe', 'WHATEVERXE_DATE'), ('nvidia-macos-driver', 'NMHDA_DATE'), ('AppleALC', 'IDISPHDA_DATE')):
+    for fork, key in (('WhateverXe', 'WHATEVERXE_DATE'), ('nvidia-macos-driver', 'NMHDA_DATE'), ('AppleALC', 'IDISPHDA_DATE'), ('SimpleMtkBtFw', 'MTKBT_DATE')):
         if heads.get(fork) != forks[fork]['tested_commit']:
             env[key] = git(ctx.src / fork, 'show', '-s', '--format=%cs', 'HEAD')
     r = subprocess.run(['/bin/bash', str(HERE / 'build.sh'), *ctx.args.stages], env=dict(os.environ, **env))
