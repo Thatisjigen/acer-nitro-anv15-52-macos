@@ -103,7 +103,8 @@ class Ctx:
     def __init__(self, args):
         self.root = args.root.rstrip('/') if getattr(args, 'root', None) else ''
         self.fake = bool(self.root)
-        self.work = Path(args.work) if getattr(args, 'work', None) else owner_home() / 'anv15-52-build'
+        # absolute: build.sh runs commands from other folders, where a relative path points elsewhere
+        self.work = Path(args.work).expanduser().resolve() if getattr(args, 'work', None) else owner_home() / 'anv15-52-build'
         self.go = getattr(args, 'go', False)
         self.args = args
         self.src, self.deps, self.obj, self.out, self.dl, self.logs = [self.work / d for d in ('src', 'deps', 'obj', 'out', 'dl', 'logs')]
