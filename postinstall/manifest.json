@@ -17,7 +17,7 @@
    "url": "https://github.com/Thatisjigen/nvidia-macos-driver.git",
    "ref": "acer/current",
    "license": "PolyForm Noncommercial 1.0.0; translator LGPL-3.0",
-   "tested_commit": "56222b00a651fde5ad519dd139123f20e0f62d70"
+   "tested_commit": "be7b3dbe0bbb929ed295a564b5eb4f9835845c90"
   },
   "WhateverXe": {
    "url": "https://github.com/Thatisjigen/WhateverXe.git",
@@ -239,7 +239,7 @@
    "sha256": "aae39ff9a5fd55685da4b3db91db890f85e7c1774493ff28aa4dcc0b2eeb869a"
   },
   "NVRMFB.kext/Contents/MacOS/NVRMFB": {
-   "sha256": "6c76c0608c36dc7851b5afe83ab5c4bf79c88d585cde40608272f9c54e984765"
+   "sha256": "4d068cc4b0ca67ba9f119d4e1fe614071aa36576f485169067385fdfa363591b"
   },
   "NVAccel.kext/Contents/MacOS/NVAccel": {
    "sha256": "d8e44fbd4e9b23a9978c0831b6e9d91182fe795d49ba15766c118dcfde108863"
