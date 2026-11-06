@@ -406,7 +406,17 @@ KMOD
   say "SimpleMtkBtPatcher $(sha "$OUT/$NAME.kext/Contents/MacOS/$NAME")"
 }
 
-ALL="rm nvrm nvrmfb nvaccel nvrmagdc nmhda plugin translator nvenc ngshim latsof nitrosense smcnvidiagpu whateverxe hybridpm applealc idisphda mtkwlan mtkbt"
+stage_nmappfree() {   # Chrome's Widevine with the AMFI boot-args: a Lilu plugin injected by OpenCore. Its own build.sh, given the Lilu and MacKernelSDK above, downloads nothing
+  local W=$OBJ/nmappfree
+  export_tree "$SRC/NMAppFree" "$W"; mkdir -p "$W/build"
+  cp -R "$LILU" "$W/build/Lilu.kext"; cp -R "$(mksdk)" "$W/build/MacKernelSDK"
+  # the date goes into the kext's version: this one gives the binary that ran
+  SOURCE_DATE_EPOCH=$(epoch "${NMAPPFREE_DATE:?}") bash "$W/build.sh" > "$LOGS/nmappfree.log" 2>&1 || { tail -20 "$LOGS/nmappfree.log"; die "NMAppFree"; }
+  rm -rf "$OUT/NMAppFree.kext"; cp -R "$W/build/NMAppFree.kext" "$OUT/NMAppFree.kext"; stamp "$OUT/NMAppFree.kext"
+  say "NMAppFree $(sha "$OUT/NMAppFree.kext/Contents/MacOS/NMAppFree")"
+}
+
+ALL="rm nvrm nvrmfb nvaccel nvrmagdc nmhda plugin translator nvenc ngshim latsof nitrosense smcnvidiagpu whateverxe hybridpm applealc idisphda mtkwlan mtkbt nmappfree"
 [ $# -gt 0 ] || set -- $ALL
 for s in "$@"; do
   case " $ALL " in *" $s "*) ;; *) die "no stage $s; stages: $ALL" ;; esac

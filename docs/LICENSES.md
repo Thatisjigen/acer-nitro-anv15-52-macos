@@ -48,6 +48,7 @@ URLs and hashes are in [efi/sources.lock.json](../efi/sources.lock.json) and [po
 | SimpleMtkBtFw (the patcher) | GPL-3.0 | |
 | LatSOF-Audio, nvenc, SMCNvidiaGPU | MIT | |
 | NitroSense-macOS | GPL-3.0 | |
+| NMAppFree | BSD-3-Clause | Not a fork: written for this laptop, in its own repository |
 
 **macOS** belongs to Apple, and its license says it runs on Apple hardware. This repository does not contain macOS: the recovery is downloaded from Apple. Decide what you are allowed to do.
 

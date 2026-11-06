@@ -1,6 +1,6 @@
 # Post-install
 
-Builds the drivers from the latest commit of the `acer/current` branches of the forks and installs them into `/Library`, in order, after a clean install of macOS. The nine kexts for the EFI come from the same build.
+Builds the drivers from the latest commit of the `acer/current` branches of the forks and installs them into `/Library`, in order, after a clean install of macOS. The ten kexts for the EFI come from the same build.
 
 > [!CAUTION]
 > **These scripts have never run on a clean install, and `install --go` has never run on a real system.** That can only be tried by formatting. Below is what was tried and what was not. Back up your data first.
@@ -20,7 +20,7 @@ From the repository folder, on a freshly installed macOS, with the network and t
 | `python3 postinstall/postinstall.py verify` | After the reboot: kexts loaded, Metal, signatures, hashes | No |
 | `sudo python3 postinstall/postinstall.py rollback --go` | Everything back. Without `--go` it says what it would do | Yes |
 
-None of them restarts the PC. **The `full` EFI goes on the USB stick before `install --go`:** the Apple Intel driver ends up in `/Library`, and it needs WhateverXe. The guide is [docs/INSTALL.md](../docs/INSTALL.md). `build` must also have compiled the six kexts for the EFI, or `install` stops before touching the system.
+None of them restarts the PC. **The `full` EFI goes on the USB stick before `install --go`:** the Apple Intel driver ends up in `/Library`, and it needs WhateverXe. The guide is [docs/INSTALL.md](../docs/INSTALL.md). `build` must also have compiled the ten kexts for the EFI, or `install` stops before touching the system.
 
 `install` stops:
 
@@ -48,13 +48,13 @@ None of them restarts the PC. **The `full` EFI goes on the USB stick before `ins
 | 11 | `auxkc` | The auxiliary kext collection, from `/Library/Extensions` | `kmutil`. It swaps it only if it holds all eight expected IDs |
 | 12 | `nitrosense` | `nitrod`, `nitroctl`, LaunchDaemon, `/Applications/NitroSense.app` | `NitroSense-macOS`. It starts at the reboot, as it needs NitroEC from the EFI |
 
-Eight more compiled kexts go in the EFI, not in `/Library`: WhateverXe, AppleALC, IDispHDA, NMHDA, SMCNvidiaGPU, HybridPM, NitroEC and AirportMtkWlan ([efi/README.md](../efi/README.md)). AirportMtkWlan carries the MT7920 firmware, downloaded with its hash from linux-firmware and built into the kext on your machine: MediaTek's licence keeps it out of this repository, so do not publish that kext. SMCNvidiaGPU has to match NVRM, and `build` compiles it together with the NVRM it just made.
+Ten more compiled kexts go in the EFI, not in `/Library`: WhateverXe, AppleALC, IDispHDA, NMHDA, SMCNvidiaGPU, HybridPM, NitroEC, AirportMtkWlan, SimpleMtkBtPatcher and NMAppFree ([efi/README.md](../efi/README.md)). AirportMtkWlan carries the MT7920 firmware, downloaded with its hash from linux-firmware and built into the kext on your machine: MediaTek's licence keeps it out of this repository, so do not publish that kext. SMCNvidiaGPU has to match NVRM, and `build` compiles it together with the NVRM it just made.
 
 **Not installed:** NMIntelFB and its daemon (turned off by `-nmintelfboff`), `NMXAudio`, and `nvutild` and the boot diagnostics, which NullMoth no longer needs.
 
 ## The forks
 
-Every change to someone else's project is a commit on a public fork, on the branch `acer/current` (`main` in HybridPM). The commits last tested are in [manifest.json](manifest.json).
+Every change to someone else's project is a commit on a public fork, on the branch `acer/current` (`main` in HybridPM). NMAppFree is not a fork: it was written for this laptop, and is built from its `main`. The commits last tested are in [manifest.json](manifest.json).
 
 | Fork | Upstream | What it adds |
 | --- | --- | --- |
@@ -69,6 +69,7 @@ Every change to someone else's project is a commit on a public fork, on the bran
 | [SimpleMtkWlan](https://github.com/Thatisjigen/SimpleMtkWlan/tree/acer/current) | [e5u/SimpleMtkWlan](https://github.com/e5u/SimpleMtkWlan) 1.6.0 | The MT7920, `14C3:7920`: detection and firmware as in Linux, and Wi-Fi 6 behind `-mtkhe` with the access point's BSS color. GPL-2.0; the firmware is generated at build, not in Git |
 | [SimpleMtkBtFw](https://github.com/Thatisjigen/SimpleMtkBtFw/tree/acer/current) | [flxxxxddd/SimpleMtkBtFw](https://github.com/flxxxxddd/SimpleMtkBtFw) 1.1.0 | The Bluetooth patcher prepares USB buffers read only: no backtrace for every USB transfer |
 | [HybridPM](https://github.com/Thatisjigen/HybridPM) | XE-PM of [JulioNectar](https://github.com/JulioNectar/Hackintosh-XPS13Plus-IrisXe-Tahoe) | A standalone Lilu plugin; on with `-hpm` |
+| [NMAppFree](https://github.com/Thatisjigen/NMAppFree) | None, its own project | A Lilu plugin: the user apps leave the strict Mach IPC policy that the AMFI boot-args put on every program, so Widevine works in Chrome |
 
 **Do not open pull requests upstream from these branches** without rewriting and understanding the code: parts were written with AI tools, and NullMoth does not accept AI-written contributions. The original authors stay the authors of the commits taken from them.
 
@@ -121,14 +122,14 @@ SMCNvidiaGPU is built together with NVRM, so the two stay together even when onl
 
 On one machine, with macOS 26.7.2 (25G332), Command Line Tools 26.6, clang 21.0.0 and SDK 26.5, at the commits listed in the manifest. **Nothing was installed by these scripts.** The drivers themselves, as a set, have had one clean boot and one sleep cycle on that machine, and no long measure.
 
-**`fetch` and `build` from zero, in an empty folder:** about 15 minutes in all, 2.4 GB. All download hashes matched; WhateverXe passed 203 of 203 CPU tests. The forks on GitHub carry the code the test machine runs, without the codes of a work log in names, comments and strings. So 14 of 21 files are the same file as the running ones, and the others differ only where the code does not:
+**`fetch` and `build` from zero, in an empty folder:** about 15 minutes in all, 2.4 GB. All download hashes matched; WhateverXe passed 203 of 203 CPU tests. The forks on GitHub carry the code the test machine runs, without the codes of a work log in names, comments and strings. So 15 of 22 files are the same file as the running ones, and the others differ only where the code does not:
 
 | File | Result |
 | --- | --- |
 | NVRM, NVRMFB, NVAccel, NVRMAGDC | **The same file, byte for byte** |
 | `NVMTLDriver` (before the bundle's signature) | **The same file** |
 | NGShim with `xefix.m`, LatSOFAudio, NMHDA | **The same file** |
-| SMCNvidiaGPU, HybridPM, AppleALC, IDispHDA, NitroEC, SimpleMtkBtPatcher | **The same file** |
+| SMCNvidiaGPU, HybridPM, AppleALC, IDispHDA, NitroEC, SimpleMtkBtPatcher, NMAppFree | **The same file** |
 | AirportMtkWlan | Differs only in its version string, which carries the short commit of the branch it is built from: built with the string of the one that ran, it is the same file |
 | WhateverXe | Same code. The running one has the old names of its diagnostics, its IORegistry keys among them, and its UUID depends on the paths of the objects |
 | `nitrod`, `nitroctl`, NitroSense.app | Same code. The running ones still have the date of an EC dump in their texts, and the app a help line that pointed at the work log |

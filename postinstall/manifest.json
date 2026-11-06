@@ -72,6 +72,12 @@
    "ref": "acer/current",
    "tested_commit": "b4c94ba733900db42652c0dafd30260eadb881e2",
    "license": "GPL-3.0"
+  },
+  "NMAppFree": {
+   "url": "https://github.com/Thatisjigen/NMAppFree.git",
+   "ref": "main",
+   "license": "BSD-3-Clause",
+   "tested_commit": "77439f8002a0fae6ccf359133997c397141c164f"
   }
  },
  "git_deps": {
@@ -209,7 +215,8 @@
   "NMHDA_DATE": "2026-11-01",
   "WHATEVERXE_DATE": "2026-11-04",
   "IDISPHDA_DATE": "2026-11-05",
-  "MTKBT_DATE": "2026-11-06"
+  "MTKBT_DATE": "2026-11-06",
+  "NMAPPFREE_DATE": "2026-11-06"
  },
  "installed_files": {
   "nullmoth_decoders": {
@@ -314,6 +321,9 @@
   },
   "SimpleMtkBtPatcher.kext/Contents/MacOS/SimpleMtkBtPatcher": {
    "sha256": "a691f55ca145d378e1c1208790058b51b3d923a535ecbd472fe077ab48ef2371"
+  },
+  "NMAppFree.kext/Contents/MacOS/NMAppFree": {
+   "sha256": "ab8ddaae58e152d36b82e6c37a1da98db9be1333b76ae1b6965e0c157ee6338f"
   }
  }
 }

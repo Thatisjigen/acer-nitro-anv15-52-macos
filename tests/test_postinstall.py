@@ -27,7 +27,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / 'postinstall/postinstall.py'
 REAL = json.loads((ROOT / 'postinstall/manifest.json').read_text())
 KEXTS = ['NVRM', 'NVRMFB', 'NVAccel', 'NVRMAGDC']
-FOR_EFI = ['NMHDA', 'NitroEC', 'SMCNvidiaGPU', 'WhateverXe', 'HybridPM', 'AppleALC', 'IDispHDA', 'AirportMtkWlan', 'SimpleMtkBtPatcher']
+FOR_EFI = ['NMHDA', 'NitroEC', 'SMCNvidiaGPU', 'WhateverXe', 'HybridPM', 'AppleALC', 'IDispHDA', 'AirportMtkWlan', 'SimpleMtkBtPatcher', 'NMAppFree']
 
 
 def sha(path):

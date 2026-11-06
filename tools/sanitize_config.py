@@ -52,6 +52,7 @@ KEXT_COMMENTS = {
     'SimpleMtkBtFw.kext': 'SimpleMtkBtFw 1.1.0 DEBUG with the USB match 13D3:3622 of this laptop: Bluetooth of the MT7920',
     'SimpleMtkBtPatcher.kext': 'SimpleMtkBtPatcher, fork branch acer/current: Bluetooth of the MT7920, USB buffers read only',
     'IDispHDA.kext': 'IDispHDA, AppleALC fork branch acer/current: audio of the Iris Xe over USB-C',
+    'NMAppFree.kext': 'NMAppFree: user apps out of the strict Mach IPC policy of the AMFI boot-args, so Widevine works in Chrome; needs Lilu',
 }
 ACPI_COMMENTS = {'SSDT-NITRO.aml': 'NTRO device for NitroEC: EC RAM window 0xFE708500, firmware controls, Darwin only'}
 COMMENTS = {
@@ -60,8 +61,9 @@ COMMENTS = {
     'VoodooI2C waits for VoodooGPIO without a limit, not 1 s': 'VoodooI2C waits for VoodooGPIO without a limit instead of 1 s, or the trackpad can stay absent',
 }
 REFERENCE = re.compile(r'\b[A-Z]+-\d{3}\b(?: fallback)?')
-# None left out: HDR, turbo and Wi-Fi 6 are on. -mtkhe is added, the working config of the test machine does not have it yet
-BOOT_ARGS_LEFT_OUT = []
+# -nmappfreedbg, a log line for each app NMAppFree exempts, is left out. HDR, turbo and Wi-Fi 6 stay on: -mtkhe is added, the working
+# config of the test machine does not have it yet
+BOOT_ARGS_LEFT_OUT = ['-nmappfreedbg']
 BOOT_ARGS_ADDED = ['-mtkhe']
 # An experiment still listed, disabled, in the config this comes from
 KEXTS_LEFT_OUT = []

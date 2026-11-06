@@ -5,7 +5,7 @@ Two profiles, built by `efi/build_efi.py` in `build/EFI/EFI/`:
 | Profile | Folder | What for | Compile? |
 | --- | --- | --- | --- |
 | `install` | `OC-INSTALL` | Install macOS, recovery. The config that installed macOS on the test machine | No, downloads only |
-| `full` | `OC` | The system with the drivers | Yes: nine kexts from the forks |
+| `full` | `OC` | The system with the drivers | Yes: ten kexts, from the forks and NMAppFree |
 
 Neither has `EFI/BOOT/BOOTx64.efi`, and `LauncherOption` is `Disabled`: rEFInd stays the main boot manager and OpenCore is one of its entries ([refind-opencore.conf](refind-opencore.conf)). Linux and Windows start from their own rEFInd entries, without going through OpenCore.
 
@@ -56,7 +56,7 @@ The EDID in `DeviceProperties` (`AAPL00,override-no-connect`) is the one of the 
 
 | Group | Kexts |
 | --- | --- |
-| Base | Lilu, AMFIPass, RestrictEvents, CpuTopologyRebuild, HybridPM (on with `-hpm`), NVMeFix |
+| Base | Lilu, AMFIPass, RestrictEvents, CpuTopologyRebuild, HybridPM (on with `-hpm`), NVMeFix, NMAppFree (Chrome's Widevine with the AMFI boot-args) |
 | Graphics | WhateverXe (DEBUG build, in place of WhateverGreen), BrightnessKeys |
 | Audio | AppleALC, SimpleHDA, NMHDA, IDispHDA (the Iris Xe over USB-C) |
 | SMC | VirtualSMC, SMCBatteryManager, SMCLightSensor, SMCProcessor, SMCSuperIO, SMCNvidiaGPU |
@@ -75,7 +75,7 @@ Present and disabled: UTBDefault, EHD0Off-ANV, USBPorts, WhateverGreen, itlwm, a
 | `ctrsmt=full` | CpuTopologyRebuild | Core topology |
 | `revpatch=sbvmm,cpuname revcpu=1` | RestrictEvents | CPU name, updates |
 | `nvfb=1 nvaccel=1 nvfbheads=4 -nvkmsnosmooth` | NullMoth | Framebuffer and accelerator of the RTX |
-| `amfi_get_out_of_my_way=0x1 amfi=0x80 ipc_control_port_options=0` | NullMoth, Graphics | WindowServer can load Metal drivers not signed by Apple. Without them the kernel rejects both plugins and the desktop does not arrive |
+| `amfi_get_out_of_my_way=0x1 amfi=0x80 ipc_control_port_options=0` | NullMoth, Graphics | WindowServer can load Metal drivers not signed by Apple. Without them the kernel rejects both plugins and the desktop does not arrive. They also put every app under the kernel's strictest Mach IPC rules: NMAppFree takes the user apps back out, see the [README](../README.md#chrome-and-nmappfree) |
 | `gfxrst=4` | WhateverXe, NullMoth | No copy of the boot screen |
 | `-allow3d -disablegfxfirmware -igfxdvmt` | WhateverXe | Intel acceleration, fixed stolen memory |
 | `-wexdbg -wex-display13-trace -liludbg liludump=90` | WhateverXe, Lilu | Logs: the kext is the DEBUG build |
@@ -95,6 +95,7 @@ Present and disabled: UTBDefault, EHD0Off-ANV, USBPorts, WhateverGreen, itlwm, a
 
 - the identity;
 - 15 keys an editor had dropped, put back with the value OpenCore 1.0.9 uses when they are absent, so that `ocvalidate` passes: same behaviour. Among them `FixupAppleEfiImages`, `false` because that is what its absence meant in the tests. `InitialMode` is `Auto`: an empty one is illegal for `ocvalidate`;
+- `-nmappfreedbg`, NMAppFree's log line for each app it exempts, left out;
 - `-mtkhe`, added: the test machine's working config does not have it yet, its test entry does (see the [README](../README.md#boot-args-you-can-take-out));
 - the comments.
 
@@ -103,7 +104,7 @@ Among the binaries, everything downloaded matches the test machine byte for byte
 | File | Difference |
 | --- | --- |
 | `AirportItlwm` | Tested: build `738d4c6`. Downloaded: `7204c69`, because the `v2.4.0-alpha` release was published again and the old build is gone. **Not tested** |
-| `WhateverXe`, `AppleALC`, `NMHDA`, `SMCNvidiaGPU`, `HybridPM`, `NitroEC`, `IDispHDA`, `AirportMtkWlan`, `SimpleMtkBtPatcher` | Compiled by you, from the latest `acer/current` of the forks: see [postinstall/README.md](../postinstall/README.md). `AirportMtkWlan` holds MediaTek's firmware: do not publish it |
+| `WhateverXe`, `AppleALC`, `NMHDA`, `SMCNvidiaGPU`, `HybridPM`, `NitroEC`, `IDispHDA`, `AirportMtkWlan`, `SimpleMtkBtPatcher`, `NMAppFree` | Compiled by you, from the latest commit of the forks and of NMAppFree: see [postinstall/README.md](../postinstall/README.md). `AirportMtkWlan` holds MediaTek's firmware: do not publish it |
 | `SimpleMtkBtFw` | The `Info.plist` gets the USB match of this laptop's Bluetooth, the same as on the test machine |
 | `UTBMap-ANV`, `EHD0Off-ANV` | Only comment strings in their `Info.plist` |
 

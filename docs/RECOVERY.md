@@ -33,6 +33,7 @@ The copies are in `/Library/ANV15-52/backup-<date>`. The rollback does not delet
 | `-nmhdaoff` | No HDMI audio. **Tried,** to get around a hang at wake | NMHDA |
 | `-latsofoff` | LatSOF-Audio does not start | LatSOF-Audio |
 | `nvsensoff=1` | SMCNvidiaGPU does not read the sensors | SMCNvidiaGPU |
+| `-nmappfreeoff` | NMAppFree exempts no app: every app goes back under the strict Mach IPC rules, and Chrome loses protected video | NMAppFree |
 
 Note the last visible line, or take a photo: with `-v` in the boot-args you see where it stops.
 

@@ -419,6 +419,10 @@
    "IDispHDA": {
     "compiled": true,
     "tested_binary_sha16": "d6e59bfcffcd7f9d"
+   },
+   "NMAppFree": {
+    "compiled": true,
+    "tested_binary_sha16": "ab8ddaae58e152d3"
    }
   },
   "install": {

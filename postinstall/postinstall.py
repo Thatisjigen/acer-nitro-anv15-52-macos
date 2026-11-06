@@ -60,7 +60,7 @@ ARTIFACTS = ['NVRM.kext/Contents/MacOS/NVRM', 'NVRMFB.kext/Contents/MacOS/NVRMFB
              'NMHDA.kext/Contents/MacOS/NMHDA', 'NitroEC.kext/Contents/MacOS/NitroEC', 'SMCNvidiaGPU.kext/Contents/MacOS/SMCNvidiaGPU',
              'WhateverXe.kext/Contents/MacOS/WhateverXe', 'HybridPM.kext/Contents/MacOS/HybridPM', 'AppleALC.kext/Contents/MacOS/AppleALC',
              'IDispHDA.kext/Contents/MacOS/IDispHDA', 'AirportMtkWlan.kext/Contents/MacOS/AirportMtkWlan',
-             'SimpleMtkBtPatcher.kext/Contents/MacOS/SimpleMtkBtPatcher']
+             'SimpleMtkBtPatcher.kext/Contents/MacOS/SimpleMtkBtPatcher', 'NMAppFree.kext/Contents/MacOS/NMAppFree']
 GRAPHICS_FORK = 'https://github.com/Thatisjigen/WhateverXe-Graphics.git'
 # Which forks each compiled file comes from. SMCNvidiaGPU is built with NVRM, so both count
 ARTIFACT_FORKS = {
@@ -72,9 +72,9 @@ ARTIFACT_FORKS = {
     'NitroEC.kext/Contents/MacOS/NitroEC': ['NitroSense-macOS'], 'SMCNvidiaGPU.kext/Contents/MacOS/SMCNvidiaGPU': ['SMCNvidiaGPU', 'nvidia-macos-driver'],
     'WhateverXe.kext/Contents/MacOS/WhateverXe': ['WhateverXe'], 'HybridPM.kext/Contents/MacOS/HybridPM': ['HybridPM'], 'AppleALC.kext/Contents/MacOS/AppleALC': ['AppleALC'],
     'IDispHDA.kext/Contents/MacOS/IDispHDA': ['AppleALC'], 'AirportMtkWlan.kext/Contents/MacOS/AirportMtkWlan': ['SimpleMtkWlan'],
-    'SimpleMtkBtPatcher.kext/Contents/MacOS/SimpleMtkBtPatcher': ['SimpleMtkBtFw'],
+    'SimpleMtkBtPatcher.kext/Contents/MacOS/SimpleMtkBtPatcher': ['SimpleMtkBtFw'], 'NMAppFree.kext/Contents/MacOS/NMAppFree': ['NMAppFree'],
 }
-COMPILED_FOR_EFI = ['NMHDA', 'NitroEC', 'SMCNvidiaGPU', 'WhateverXe', 'HybridPM', 'AppleALC', 'IDispHDA', 'AirportMtkWlan', 'SimpleMtkBtPatcher']
+COMPILED_FOR_EFI = ['NMHDA', 'NitroEC', 'SMCNvidiaGPU', 'WhateverXe', 'HybridPM', 'AppleALC', 'IDispHDA', 'AirportMtkWlan', 'SimpleMtkBtPatcher', 'NMAppFree']
 EFI_ARTIFACTS = [f'{k}.kext/Contents/MacOS/{k}' for k in COMPILED_FOR_EFI]
 
 
@@ -893,7 +893,7 @@ def cmd_build(ctx):
     # These go into the binaries. For a commit that was tested they stay what they were, to give the same file; for a newer one they follow it
     if heads.get('nvenc') != forks['nvenc']['tested_commit']:
         env['NVENC_VERSION'] = 'v0.9.5-g' + heads['nvenc'][:7]
-    for fork, key in (('WhateverXe', 'WHATEVERXE_DATE'), ('nvidia-macos-driver', 'NMHDA_DATE'), ('AppleALC', 'IDISPHDA_DATE'), ('SimpleMtkBtFw', 'MTKBT_DATE')):
+    for fork, key in (('WhateverXe', 'WHATEVERXE_DATE'), ('nvidia-macos-driver', 'NMHDA_DATE'), ('AppleALC', 'IDISPHDA_DATE'), ('SimpleMtkBtFw', 'MTKBT_DATE'), ('NMAppFree', 'NMAPPFREE_DATE')):
         if heads.get(fork) != forks[fork]['tested_commit']:
             env[key] = git(ctx.src / fork, 'show', '-s', '--format=%cs', 'HEAD')
     r = subprocess.run(['/bin/bash', str(HERE / 'build.sh'), *ctx.args.stages], env=dict(os.environ, **env))
@@ -957,7 +957,7 @@ def write_out_manifest(ctx):
 
 
 def efi_problems(ctx):
-    """Without these six kexts no EFI can start the system that install leaves: better to find out now."""
+    """The full EFI is built from these kexts, and without it the system that install leaves does not start: better to find out now."""
     manifest = ctx.out_manifest()
     problems = []
     for rel in EFI_ARTIFACTS:

@@ -34,7 +34,8 @@ OpenCore EFI and post-install scripts for the Acer Nitro ANV15-52: macOS Tahoe w
 | Sleep and wake | ✅ | With the RTX on |
 | Video decoding on the RTX | ✅ | H.264, VP9, AV1 in Chrome. No VP9 or AV1 in Safari |
 | Protected video, Firefox | ✅ | Widevine test streams up to 4K. Netflix not tried yet |
-| Protected video, Chrome and Safari | ❌ | Chrome's Widevine stops, a side effect of the AMFI boot-args; Safari has no decoder for protected video |
+| Protected video, Chrome | ✅ | Widevine, Netflix included, with [NMAppFree](#chrome-and-nmappfree) |
+| Protected video, Safari | ❌ | No decoder for protected video |
 | CPU turbo | ✅ | With HybridPM: one core reaches 4.64 GHz, for about 10 W more at idle |
 | Speakers, headphones, internal microphone | ✅ | |
 | HDMI audio | ✅ | |
@@ -88,6 +89,20 @@ On by default. Take them out of `boot-args` in your `config.plist` to go back.
 | `-wex-hdr-modes -wex-hdr-sgx` | System Settings shows the HDR switch for a monitor on USB-C |
 | `-hpm hpmepp=96` | HybridPM lets one core reach 4.64 GHz, for about 10 W more at idle. One boot and one sleep cycle so far |
 | `-mtkhe` | Wi-Fi 6 (802.11ax) on the MT7920, with the access point's BSS color; without it, 802.11ac. One boot so far |
+
+## Chrome and NMAppFree
+
+The AMFI boot-args, which the Metal drivers not signed by Apple need, make the kernel treat every program as part of macOS and apply its strictest Mach IPC rules to all of them. Chrome's Widevine helper breaks one of those rules and is killed. [NMAppFree](https://github.com/Thatisjigen/NMAppFree), a Lilu plugin in the EFI, takes the apps outside the system folders out of that policy when they start, as macOS already does for a plugin host such as Firefox. It re-signs nothing and changes no file.
+
+**Security:** this relaxes the kernel's Mach IPC hardening for every program outside `/System`, `/usr`, `/bin`, `/sbin` and `/Library/Apple`. That is how those apps run on a real Mac, but it is less hardening than the AMFI boot-args give them otherwise. The system binaries keep it.
+
+| Boot-arg | What NMAppFree does |
+| --- | --- |
+| none | Every app outside the system folders. The mode that was tested |
+| `-nmappfreeoff` | Nothing: Chrome goes back to no protected video |
+| `-nmappfreedbg` | One log line for each app it exempts |
+
+The other modes are in [its README](https://github.com/Thatisjigen/NMAppFree#modes-boot-args) and were not tested here.
 
 ## Known issues
 
