@@ -263,7 +263,7 @@
   },
   "bundle/libnvmtl_translate.dylib": {
    "sha256": "a42cf3e64a8ec8c6ffc688041456fe77821d253fb6c54788901e48170fb1ae88",
-   "reference_sha256": "443b1fd14f06235e5202032755ef422395afdea26b4932de1bf9922f8ebe1f4e",
+   "reference_sha256": "d70e7719cb40e3dc7db02678b58c42ec94fa37f683c593461b7ebf91be7c9932",
    "note": "same sources; what ran keeps the paths of the folder it was built in, here they read /build/translator"
   },
   "bundle/libnvencvt.dylib": {

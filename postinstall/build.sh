@@ -170,8 +170,10 @@ stage_translator() {   # libnvmtl_translate: Rust, toolchain and crates under $W
   # Always this folder: wrapper depends on the crate above it, outside its workspace, so cargo puts that absolute path into the hash in every symbol, and another folder gives another file
   local B=/private/tmp/anv15-52-translator
   rm -rf "$B" || die "$B belongs to someone else: remove it"; mkdir -m 700 "$B" || die "cannot create $B"; export_tree "$NM" "$B/src" translator
-  # File names end up in the library, for panics: these prefixes, which name no machine, give the same bytes wherever this folder is
-  export RUSTFLAGS="--remap-path-prefix=$B/src=/build/translator/src --remap-path-prefix=$CARGO_HOME=/build/cargo -C link-arg=-Wl,-install_name,@rpath/libnvmtl_translate.dylib"
+  # File names end up in the library, for panics: these prefixes, which name no machine, give the same bytes wherever this folder is.
+  # The linker hashes its debug map, with the paths of Rust's own libraries under $R, into the UUID before strip -S removes it: -oso_prefix
+  # leaves those paths relative, so $WORK does not change the UUID
+  export RUSTFLAGS="--remap-path-prefix=$B/src=/build/translator/src --remap-path-prefix=$CARGO_HOME=/build/cargo -C link-arg=-Wl,-oso_prefix,$R/ -C link-arg=-Wl,-install_name,@rpath/libnvmtl_translate.dylib"
   ( cd "$B/src/translator" && cargo build --locked --release --target x86_64-apple-darwin --manifest-path wrapper/Cargo.toml --target-dir "$B/target" ) > "$LOGS/translator.log" 2>&1 \
     || { grep -A6 '^error' "$LOGS/translator.log" | head -30; die "translator"; }
   local D=$OUT/bundle/libnvmtl_translate.dylib; mkdir -p "$OUT/bundle"
