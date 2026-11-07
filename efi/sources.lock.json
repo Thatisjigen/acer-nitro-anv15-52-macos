@@ -389,11 +389,11 @@
    },
    "HybridPM": {
     "compiled": true,
-    "tested_binary_sha16": "217e1bf03127b5dc"
+    "tested_binary_sha16": "44f84b8a12604055"
    },
    "NitroEC": {
     "compiled": true,
-    "tested_binary_sha16": "1b7ea62dc898842a"
+    "tested_binary_sha16": "62535c2d3fd99910"
    },
    "SimpleMtkBtFw": {
     "asset": "SimpleMtkBtFw-1.1.0",
@@ -410,11 +410,11 @@
    },
    "SimpleMtkBtPatcher": {
     "compiled": true,
-    "tested_binary_sha16": "a691f55ca145d378"
+    "tested_binary_sha16": "1917bcab0b1e8f75"
    },
    "AirportMtkWlan": {
     "compiled": true,
-    "tested_binary_sha16": "c43b79f0f61797de"
+    "tested_binary_sha16": "34dc1df881c47ae0"
    },
    "IDispHDA": {
     "compiled": true,

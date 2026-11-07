@@ -62,7 +62,7 @@ The EDID in `DeviceProperties` (`AAPL00,override-no-connect`) is the one of the 
 | SMC | VirtualSMC, SMCBatteryManager, SMCLightSensor, SMCProcessor, SMCSuperIO, SMCNvidiaGPU |
 | Input | VoodooI2C with its plugins, VoodooI2CHID, VoodooPS2Controller with its plugins |
 | USB | USBToolBox, UTBMap-ANV, XHCI-unsupported |
-| Network | RealtekRTL8111, AirportMtkWlan, SimpleMtkBtFw, SimpleMtkBtPatcher, BlueToolFixup: the original MediaTek MT7920. SimpleMtkBtFw gets one more USB match, `13D3:3622`, the Bluetooth of this laptop. SimpleMtkBtPatcher is compiled from the fork: it prepares USB buffers read only, without the backtraces the release logs for every USB transfer |
+| Network | RealtekRTL8111, AirportMtkWlan, SimpleMtkBtFw, SimpleMtkBtPatcher, BlueToolFixup: the original MediaTek MT7920. SimpleMtkBtFw gets one more USB match, `13D3:3622`, the Bluetooth of this laptop. SimpleMtkBtPatcher is compiled from the fork: it touches only the transfers of the MediaTek controller, and prepares USB buffers read only, without the backtraces the release logs for every USB transfer |
 | Laptop | NitroEC |
 
 Present and disabled: UTBDefault, EHD0Off-ANV, USBPorts, WhateverGreen, itlwm, and AirportItlwm, IntelBluetoothFirmware and IntelBTPatcher. **With an Intel card** in place of the MT7920, enable those three and disable AirportMtkWlan, SimpleMtkBtFw and SimpleMtkBtPatcher: that was tested with an AC 8265.

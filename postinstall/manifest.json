@@ -35,7 +35,7 @@
    "url": "https://github.com/Thatisjigen/NitroSense-macOS.git",
    "ref": "acer/current",
    "license": "GPL-3.0",
-   "tested_commit": "6ff1e5fa28870e88bdc3965d7fc73f9e14358c78"
+   "tested_commit": "66a29b0d87d9875d458a848ce8706658c3f870d8"
   },
   "SMCNvidiaGPU": {
    "url": "https://github.com/Thatisjigen/SMCNvidiaGPU.git",
@@ -59,18 +59,18 @@
    "url": "https://github.com/Thatisjigen/HybridPM.git",
    "ref": "main",
    "license": "Thou Shalt Not Profit 1.0",
-   "tested_commit": "cc717cdf174b47e7f14faa8b0350c2227543930b"
+   "tested_commit": "808f89d4c43722c39a96de102ee6c19ac645d8b9"
   },
   "SimpleMtkWlan": {
    "url": "https://github.com/Thatisjigen/SimpleMtkWlan.git",
    "ref": "acer/current",
-   "tested_commit": "0583491cd2aca833876c254831e1618df2d48507",
+   "tested_commit": "c928c8d3016d3112c1d7e959a9624d1d95187e99",
    "license": "GPL-2.0"
   },
   "SimpleMtkBtFw": {
    "url": "https://github.com/Thatisjigen/SimpleMtkBtFw.git",
    "ref": "acer/current",
-   "tested_commit": "b4c94ba733900db42652c0dafd30260eadb881e2",
+   "tested_commit": "5c2e42405f78e88b6e88c02e7f8e3652e84edda9",
    "license": "GPL-3.0"
   },
   "NMAppFree": {
@@ -275,11 +275,11 @@
    "sha256": "49a1bb1231f0f7958ce9eb1ca12d6fdbf3bc18222a6a219fd5024e6cf176321c"
   },
   "NitroEC.kext/Contents/MacOS/NitroEC": {
-   "sha256": "1b7ea62dc898842a68c20918b9043bc5522574ad5fae29e088f9383eaf811e61"
+   "sha256": "62535c2d3fd999109684fdf5848efa2c4ed4361823bf2c3dfad9cfeecc2e5b95"
   },
   "nitrosense/nitrod": {
-   "sha256": "3f9f5574be75778d65cb223e7a33c851ecc9db20f0dd0f32ac0940fb6dd1e172",
-   "reference_sha256": "c28c253363af057c0d6d9320dbfaa63456f8b6ac92edb7e65879962e6221620d",
+   "sha256": "3c58a7cd6622f984d901b6f4b1eb943536247dd558d0bd964c283ec07c23a9c6",
+   "reference_sha256": "de341e8493fb34b035782622545ac2ab31e1940b1d5eb720e45143d459e58e7d",
    "note": "same code; what runs still has the date of an EC dump in its texts, and the app a help line that pointed at the work log"
   },
   "nitrosense/nitroctl": {
@@ -303,7 +303,7 @@
    "reference_sha256_without_uuid": "ea316608eff49924eef2507c566129dd879714287785e0e43b7164573e1c92bd"
   },
   "HybridPM.kext/Contents/MacOS/HybridPM": {
-   "sha256": "217e1bf03127b5dc7d9fcb6ae76c7d6ff38f4f1990ea979fb2d80707db841fd0"
+   "sha256": "44f84b8a1260405570ca9aeb72d444e6a6e830c1ba566e97018b0603812e0c9f"
   },
   "AppleALC.kext/Contents/MacOS/AppleALC": {
    "sha256": "b2860ae275fd537f7f95f5aab01add0d412c21fc270ea20be020a9bfe0cfc8b1"
@@ -315,12 +315,12 @@
    "sha256": "d6e59bfcffcd7f9d362f42662a364eb85374b9520dc413d8971bdb79bcdee0cc"
   },
   "AirportMtkWlan.kext/Contents/MacOS/AirportMtkWlan": {
-   "sha256": "c43b79f0f61797de76236f53e6e0154ad3b6d7edb68e10734d9eac60a5d5ea54",
-   "reference_sha256": "acac535b41dfae445a4b13ed9c7f0f51635f399df4341dff1d4b06ee45442a46",
+   "sha256": "34dc1df881c47ae094d936a1a7b481621352af0fa4abe6102b23247aa7b4e659",
+   "reference_sha256": "1e5214db4e5a84d90452144bca1189ed1d4f2299944e4642a4191bbd52e49769",
    "note": "the one that ran carries the short commit of the local branch it was built from in its version string; built with that string it is the same file"
   },
   "SimpleMtkBtPatcher.kext/Contents/MacOS/SimpleMtkBtPatcher": {
-   "sha256": "a691f55ca145d378e1c1208790058b51b3d923a535ecbd472fe077ab48ef2371"
+   "sha256": "1917bcab0b1e8f757e78398736e1fe209875dc27cf2b20255dfc827859c7beb0"
   },
   "NMAppFree.kext/Contents/MacOS/NMAppFree": {
    "sha256": "ab8ddaae58e152d36b82e6c37a1da98db9be1333b76ae1b6965e0c157ee6338f"
