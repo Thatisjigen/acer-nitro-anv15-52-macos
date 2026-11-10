@@ -17,31 +17,31 @@
    "url": "https://github.com/Thatisjigen/nvidia-macos-driver.git",
    "ref": "acer/current",
    "license": "PolyForm Noncommercial 1.0.0; translator LGPL-3.0",
-   "tested_commit": "be7b3dbe0bbb929ed295a564b5eb4f9835845c90"
+   "tested_commit": "7b8d96c954227dbcc633c42b2d20061ba3ec3a35"
   },
   "WhateverXe": {
    "url": "https://github.com/Thatisjigen/WhateverXe.git",
    "ref": "acer/current",
    "license": "BSD-3-Clause",
-   "tested_commit": "db866320fab5381600679e5ebd453ee84a6af9ac"
+   "tested_commit": "be2251191bd86b1071b648455689f1ddceb89c61"
   },
   "nvenc": {
    "url": "https://github.com/Thatisjigen/nvenc.git",
    "ref": "acer/current",
    "license": "MIT",
-   "tested_commit": "ce664134dfcf668325ccf2cd33d2cc66e44e8833"
+   "tested_commit": "3afef22c8f7eb0a5d34e8f04acee7c92086f01eb"
   },
   "NitroSense-macOS": {
    "url": "https://github.com/Thatisjigen/NitroSense-macOS.git",
    "ref": "acer/current",
    "license": "GPL-3.0",
-   "tested_commit": "66a29b0d87d9875d458a848ce8706658c3f870d8"
+   "tested_commit": "bf862cfcc507a03781e472f5ca3dc60ff08fac89"
   },
   "SMCNvidiaGPU": {
    "url": "https://github.com/Thatisjigen/SMCNvidiaGPU.git",
    "ref": "acer/current",
    "license": "MIT",
-   "tested_commit": "9f8b8bcedb30e71cd192b6aec44a5182dddd8995"
+   "tested_commit": "6d1027a8f3fb19938f285049f0c3b492f2063a97"
   },
   "LatSOF-Audio": {
    "url": "https://github.com/Thatisjigen/LatSOF-Audio.git",
@@ -59,12 +59,12 @@
    "url": "https://github.com/Thatisjigen/HybridPM.git",
    "ref": "main",
    "license": "Thou Shalt Not Profit 1.0",
-   "tested_commit": "808f89d4c43722c39a96de102ee6c19ac645d8b9"
+   "tested_commit": "23c4537ab971367ac9e37758ada4f9bbffc7b952"
   },
   "SimpleMtkWlan": {
    "url": "https://github.com/Thatisjigen/SimpleMtkWlan.git",
    "ref": "acer/current",
-   "tested_commit": "c928c8d3016d3112c1d7e959a9624d1d95187e99",
+   "tested_commit": "9ee08b8ea68adc0d6ec7a7a8f7cce844f511f15c",
    "license": "GPL-2.0"
   },
   "SimpleMtkBtFw": {
@@ -77,7 +77,7 @@
    "url": "https://github.com/Thatisjigen/NMAppFree.git",
    "ref": "main",
    "license": "BSD-3-Clause",
-   "tested_commit": "77439f8002a0fae6ccf359133997c397141c164f"
+   "tested_commit": "9d0b4809a2959abf2445ae322d6e63e719750dd5"
   }
  },
  "git_deps": {
@@ -138,8 +138,8 @@
   },
   "posh_patch": {
    "file": "posh_patch.sh",
-   "url": "https://raw.githubusercontent.com/Thatisjigen/WhateverXe-Graphics/fd09cb62485341de65d82ff2c4c4eb10686c530c/tools/posh_patch.sh",
-   "sha256": "c56360e1f3a3dad5c474746b8aea2c9a7c9ba7c5021b21a4d2816a01501e86c3",
+   "url": "https://raw.githubusercontent.com/Thatisjigen/WhateverXe-Graphics/9fb55d3e87612d8ea89603e98468a08721b78f34/tools/posh_patch.sh",
+   "sha256": "551b9cd83c905ee5a8af5e47fea33a27caa8a46d8e54180b28af2222c1198af2",
    "license": "BSD-2-Clause"
   },
   "lilu_debug": {

@@ -32,7 +32,7 @@ OpenCore EFI and post-install scripts for the Acer Nitro ANV15-52: macOS Tahoe w
 | Three displays | ✅ | Panel, USB-C, HDMI |
 | HDR | ✅ | Over USB-C. HDMI stays SDR |
 | Sleep and wake | ✅ | With the RTX on |
-| Video decoding on the RTX | ✅ | H.264, VP9, AV1 in Chrome. No VP9 or AV1 in Safari |
+| Video decoding on the RTX | ✅ | H.264, VP9, AV1 in Chrome; H.264, HEVC, VP9 in Safari too, not AV1 ([Safari video](#safari-video-on-the-rtx)) |
 | Protected video, Firefox | ✅ | Widevine test streams up to 4K. Netflix not tried yet |
 | Protected video, Chrome | ✅ | Widevine, Netflix included, with [NMAppFree](#chrome-and-nmappfree) |
 | Protected video, Safari | ❌ | No decoder for protected video |
@@ -103,6 +103,10 @@ The AMFI boot-args, which the Metal drivers not signed by Apple need, make the k
 | `-nmappfreedbg` | One log line for each app it exempts |
 
 The other modes are in [its README](https://github.com/Thatisjigen/NMAppFree#modes-boot-args) and were not tested here.
+
+## Safari video on the RTX
+
+Safari's GPU process (`com.apple.WebKit.GPU`) decodes **H.264, HEVC and VP9** on the RTX, through the NVIDIA runtime's video decoders (`libnvencvt`) that a WhateverXe rule lets that process map. A 4K H.264 clip plays at about a fifth of the CPU a software decoder takes. AV1 stays off: 10-bit AV1 decodes wrong on this Blackwell GPU, so it is refused rather than shown wrong. Tested on YouTube up to 2160p.
 
 ## Known issues
 
