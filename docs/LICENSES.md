@@ -28,8 +28,9 @@ URLs and hashes are in [efi/sources.lock.json](../efi/sources.lock.json) and [po
 | BlueToolFixup (BrcmPatchRAM) | GPL-2.0 | Downloaded |
 | NVMeFix, VoodooPS2, RealtekRTL8111, CpuTopologyRebuild, SimpleHDA, USBToolBox, IntelBluetoothFirmware, AMFIPass | See each project | Downloaded |
 | `HfsPlus.efi`, `apfs_aligned.efi` | Apple binaries | Downloaded from acidanthera/OcBinaryData, never copied here |
-| WhateverXe Graphics 0.4.0 | Tools BSD-2-Clause, payloads excluded | **Modified Apple drivers:** downloaded from b00t0x's release. The file patched by `posh_patch.sh` is created on your machine and must not be published |
-| NullMoth 2.7.2 | PolyForm Noncommercial 1.0.0; Mesa; NVIDIA firmware with its own license | Downloaded from the release. **Noncommercial use** |
+| WhateverXe Graphics 0.4.1 | Tools BSD-2-Clause, payloads excluded | **Modified Apple drivers:** downloaded from b00t0x's release. The file patched by `posh_patch.sh` is created on your machine and must not be published |
+| NullMoth 2.9 | PolyForm Noncommercial 1.0.0; Mesa; NVIDIA firmware with its own license | Downloaded from the release. **Noncommercial use** |
+| NVIDIA Linux driver 620.70.06 (`.run`) | NVIDIA's driver licence | Downloaded from NVIDIA; NullMoth's installer keeps only the four GSP firmware files of it, in `/Library/NullMoth/nvfw`. Never published here |
 | Sound Open Firmware firmware | Intel license | Downloaded, embedded in the kext on your machine. Do not publish that kext without reading `LICENCE.Intel` |
 | open-gpu-kernel-modules | MIT and GPL-2.0 | Downloaded to compile NVRM |
 | SimpleMtkBtFw | GPL-3.0 | Downloaded; one USB match is added to its `Info.plist`. The patcher's `Info.plist` also comes from this release |
@@ -40,7 +41,7 @@ URLs and hashes are in [efi/sources.lock.json](../efi/sources.lock.json) and [po
 | Fork | License | What it means |
 | --- | --- | --- |
 | nvidia-macos-driver | PolyForm Noncommercial 1.0.0; translator LGPL-3.0 | **The compiled kexts and plugin are for noncommercial use only.** The branch also holds 25 commits by kitsuneislife from [nmx-intel](https://github.com/kitsuneislife/nmx-intel), 4 in the NVAccel compiled here and 21 in NMIntelFB, which is not installed here. That project states no license: the author agreed to their use, with nothing in writing |
-| NvGfx (`darwin.mk`, `linecc.py`, to compile) | PolyForm Noncommercial 1.0.0 | Not redistributed |
+| NvGfx (`darwin.mk`, to compile NVIDIA's RM and NVKMS for macOS) | PolyForm Noncommercial 1.0.0 | Not redistributed |
 | HybridPM | Thou Shalt Not Profit 1.0 | XE-PM code by JulioNectar: non-profit use, same license |
 | NGShim (`ngshim.m` of umeow0716/NootedGreen) | Thou Shalt Not Profit 1.0 | Downloaded with its hash and compiled on your machine with `xefix.m`, not redistributed |
 | WhateverXe, AppleALC | BSD-3-Clause | |
@@ -49,6 +50,7 @@ URLs and hashes are in [efi/sources.lock.json](../efi/sources.lock.json) and [po
 | LatSOF-Audio, nvenc, SMCNvidiaGPU | MIT | |
 | NitroSense-macOS | GPL-3.0 | |
 | NMAppFree | BSD-3-Clause | Not a fork: written for this laptop, in its own repository |
+| USBKeeper (USBDiskKeeper) | None stated yet | Not a fork: written for this laptop, in its own repository, which has no license file yet. Compiled on your machine, not redistributed |
 
 **macOS** belongs to Apple, and its license says it runs on Apple hardware. This repository does not contain macOS: the recovery is downloaded from Apple. Decide what you are allowed to do.
 

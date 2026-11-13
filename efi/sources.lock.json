@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "date": "2026-11-03",
+ "date": "2026-11-13",
  "opencore": "1.0.9 RELEASE 78d5ff8",
  "tools": {
   "asset": "OpenCore-1.0.9",
@@ -284,7 +284,7 @@
    },
    "SMCNvidiaGPU": {
     "compiled": true,
-    "tested_binary_sha16": "02d33a32d4f34cf9"
+    "tested_binary_sha16": "c250090d414abd5e"
    },
    "USBToolBox": {
     "asset": "USBToolBox-1.2.0",
@@ -339,7 +339,7 @@
    },
    "WhateverXe": {
     "compiled": true,
-    "tested_binary_sha16": "7fe22f142ce64c76"
+    "tested_binary_sha16": "40335e5b4bb327cc"
    },
    "XHCI-unsupported": {
     "local": "efi/kexts/XHCI-unsupported.kext",
@@ -389,11 +389,11 @@
    },
    "HybridPM": {
     "compiled": true,
-    "tested_binary_sha16": "44f84b8a12604055"
+    "tested_binary_sha16": "c84163688a3246db"
    },
    "NitroEC": {
     "compiled": true,
-    "tested_binary_sha16": "62535c2d3fd99910"
+    "tested_binary_sha16": "0febe845e4fefd8b"
    },
    "SimpleMtkBtFw": {
     "asset": "SimpleMtkBtFw-1.1.0",
@@ -414,7 +414,7 @@
    },
    "AirportMtkWlan": {
     "compiled": true,
-    "tested_binary_sha16": "34dc1df881c47ae0"
+    "tested_binary_sha16": "06e52b92f8052390"
    },
    "IDispHDA": {
     "compiled": true,
@@ -422,7 +422,11 @@
    },
    "NMAppFree": {
     "compiled": true,
-    "tested_binary_sha16": "ab8ddaae58e152d3"
+    "tested_binary_sha16": "de0fd2495c5f1cac"
+   },
+   "USBDiskKeeper": {
+    "compiled": true,
+    "tested_binary_sha16": "a4bc9997b22c062a"
    }
   },
   "install": {

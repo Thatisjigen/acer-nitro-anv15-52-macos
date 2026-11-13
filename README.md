@@ -16,7 +16,7 @@ OpenCore EFI and post-install scripts for the Acer Nitro ANV15-52: macOS Tahoe w
 | Audio | Realtek ALC245 |
 | Wi-Fi, Bluetooth | MediaTek MT7920 |
 | Ethernet | Realtek Killer E2600 |
-| macOS | Tahoe 26.7.2 (25G332) |
+| macOS | Tahoe 26.7.3 (25G342) |
 | Bootloader | OpenCore 1.0.9, started from rEFInd |
 | SMBIOS | MacBookPro16,2 |
 
@@ -27,10 +27,11 @@ OpenCore EFI and post-install scripts for the Acer Nitro ANV15-52: macOS Tahoe w
 | Iris Xe and RTX 5050 acceleration | ✅ | Metal 2 and Metal 3, together |
 | Internal panel | ✅ | 180 Hz, brightness |
 | HiDPI | ✅ | On the panel, up to "looks like" 1600×900 |
-| HDMI | ✅ | Up to 1080p at 144 Hz, 4K at 30 Hz |
+| HDMI | ✅ | Up to 1080p at 144 Hz, 4K at 30 Hz. A monitor plugged in after a boot without one lights up |
 | USB-C video and hot plug | ✅ | One display, on the Iris Xe |
 | Three displays | ✅ | Panel, USB-C, HDMI |
-| HDR | ✅ | Over USB-C. HDMI stays SDR |
+| HDR | ✅ | Over USB-C, and HDR10 over HDMI on the RTX, also at 120 Hz |
+| Monitor control over DDC/CI | ✅ | A monitor on the RTX's HDMI: its brightness is read. Setting it from an app was not tried |
 | Sleep and wake | ✅ | With the RTX on |
 | Video decoding on the RTX | ✅ | H.264, VP9, AV1 in Chrome; H.264, HEVC, VP9 in Safari too, not AV1 ([Safari video](#safari-video-on-the-rtx)) |
 | Protected video, Firefox | ✅ | Widevine test streams up to 4K. Netflix not tried yet |
@@ -62,7 +63,7 @@ Full guide: [docs/INSTALL.md](docs/INSTALL.md).
    python3 efi/build_efi.py deploy --profile install --volume /Volumes/OPENCORE --go
    ```
 3. **rEFInd:** add [efi/refind-opencore.conf](efi/refind-opencore.conf) to `refind.conf`. There is no `BOOTx64.efi` here.
-4. **macOS:** install it from the entry **OpenCore install**, then update to 26.7.2 (25G332).
+4. **macOS:** install it from the entry **OpenCore install**, then update to 26.7.3 (25G342).
 5. **Drivers and final EFI,** on the new macOS, with the charger connected. Do not restart until `install` says it has finished.
    ```bash
    xcode-select --install
@@ -82,13 +83,18 @@ Serial, MLB, UUID and ROM are generated on your machine, in `private/identity.js
 
 ## Boot-args you can take out
 
-On by default. Take them out of `boot-args` in your `config.plist` to go back.
+On by default. Take them out of `boot-args` in your `config.plist` to go back. What each one does on this laptop: [efi/README.md](efi/README.md#boot-args-of-the-full-profile).
 
 | Boot-args | What they do |
 | --- | --- |
-| `-wex-hdr-modes -wex-hdr-sgx` | System Settings shows the HDR switch for a monitor on USB-C |
-| `-hpm hpmepp=96` | HybridPM lets one core reach 4.64 GHz, for about 10 W more at idle. One boot and one sleep cycle so far |
-| `-mtkhe` | Wi-Fi 6 (802.11ax) on the MT7920, with the access point's BSS color; without it, 802.11ac. One boot so far |
+| `-wex-nv-video` | Safari decodes video on the RTX ([Safari video](#safari-video-on-the-rtx)) |
+| `-wex-va-renderer` | Hardware video processing on the Iris Xe, through the Intel video driver corrected for this GPU. Experimental |
+| `nvwallpaper=1` | The Aerial wallpaper decodes on the RTX |
+| `nvfb10bit=1 nvfbhdr=1` | HDR10 over HDMI on the RTX |
+| `nvrmfbddc=1` | DDC/CI for a monitor on the RTX |
+| `nvrmaspm=1 nvfbkeepfront=1 nvfbvrr=1` | NullMoth's ASPM, frame kept across mode changes and variable refresh: no effect seen here yet |
+
+Some features now on in the kexts have a boot-arg that turns them off instead: `-wex-no-hdr-modes` for the HDR switch of a monitor on USB-C, `-nohpm` for HybridPM's turbo (one core at 4.64 GHz, about 10 W more at idle), `-mtknohe` for Wi-Fi 6 on the MT7920.
 
 ## Chrome and NMAppFree
 
@@ -106,11 +112,12 @@ The other modes are in [its README](https://github.com/Thatisjigen/NMAppFree#mod
 
 ## Safari video on the RTX
 
-Safari's GPU process (`com.apple.WebKit.GPU`) decodes **H.264, HEVC and VP9** on the RTX, through the NVIDIA runtime's video decoders (`libnvencvt`) that a WhateverXe rule lets that process map. A 4K H.264 clip plays at about a fifth of the CPU a software decoder takes. AV1 stays off: 10-bit AV1 decodes wrong on this Blackwell GPU, so it is refused rather than shown wrong. Tested on YouTube up to 2160p.
+With `-wex-nv-video` in the boot-args, Safari's GPU process (`com.apple.WebKit.GPU`) decodes **H.264, HEVC and VP9** on the RTX, through the NVIDIA runtime's video decoders (`libnvencvt`) that a WhateverXe rule lets that process map. A 4K H.264 clip plays at about a fifth of the CPU a software decoder takes. AV1 stays off: 10-bit AV1 decodes wrong on this Blackwell GPU, so it is refused rather than shown wrong. Tested on YouTube up to 2160p.
 
 ## Known issues
 
 - **Intel GPU resets:** in about one boot out of three the Intel blitter hangs and resets over and over, and everything slows down for some minutes. Cause unknown.
+- **A panic when the Intel GPU stops answering:** seen twice with WhateverXe 0.8.2, under a heavy build and with the Aerial screensaver: the DEBUG build stopped at its check of the command streamer's status buffer. The build pinned here re-arms that buffer instead, at most once a second; it has not been needed yet.
 - **Do not sleep with `-nvoff`:** the one try without the RTX ended in a watchdog panic.
 - **A monitor on HDMI can look too dark:** macOS gives it gamma 1.961. Choose the profile `sRGB IEC61966-2.1` in System Settings › Displays.
 

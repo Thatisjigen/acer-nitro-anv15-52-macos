@@ -27,7 +27,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / 'postinstall/postinstall.py'
 REAL = json.loads((ROOT / 'postinstall/manifest.json').read_text())
 KEXTS = ['NVRM', 'NVRMFB', 'NVAccel', 'NVRMAGDC']
-FOR_EFI = ['NMHDA', 'NitroEC', 'SMCNvidiaGPU', 'WhateverXe', 'HybridPM', 'AppleALC', 'IDispHDA', 'AirportMtkWlan', 'SimpleMtkBtPatcher', 'NMAppFree']
+FOR_EFI = ['NMHDA', 'NitroEC', 'SMCNvidiaGPU', 'WhateverXe', 'HybridPM', 'AppleALC', 'IDispHDA', 'AirportMtkWlan', 'SimpleMtkBtPatcher', 'NMAppFree', 'USBDiskKeeper']
 
 
 def sha(path):
@@ -188,7 +188,7 @@ class Install(unittest.TestCase):
         self.assertEqual(sha(macos / 'libnvdec_h264.dylib'), sha(self.f.work / 'out/bundle/libnvencvt.dylib'))
         self.assertEqual(sha(macos / 'libnvencvt.dylib'), sha(self.f.work / 'out/bundle/libnvencvt.dylib'))
         self.assertEqual(os.readlink(macos / 'libnvdec_hevc.dylib'), 'libnvdec_h264.dylib')
-        self.assertEqual((self.root / 'Library/GPUBundles/nvmtl/nvrm610.conf').read_text(), 'NVMTL_RES2_WS=1\nNVMTL_NVENCVT=WallpaperAerialsExtension,DisplaysExt\n')
+        self.assertEqual((self.root / 'Library/GPUBundles/nvmtl/nvrm610.conf').read_text(), 'NVMTL_RES2_WS=1\nNVMTL_NVENCVT=com.apple.WebKit.GPU\n')
         self.assertTrue((self.root / 'Library/Displays/Contents/Resources/Overrides/DisplayVendorID-e77/DisplayProductID-1513').is_file())
         self.assertEqual(subprocess.run(['/usr/bin/codesign', '--verify', str(macos.parent.parent)], capture_output=True).returncode, 0)
         self.assertEqual((self.root / 'Library/GPUBundles/AppleIntelTGLGraphicsMTLDriver.bundle/Contents/MacOS/AppleIntelTGLGraphicsMTLDriver').read_text(), 'patched metal\n')

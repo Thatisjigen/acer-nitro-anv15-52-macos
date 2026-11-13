@@ -84,13 +84,13 @@ With this same EFI the install worked here, and USB keyboard and mouse worked. T
 
 ## 5. Get to the tested build of macOS
 
-Everything was tested on **macOS 26.7.2 (25G332)**. See which build you have:
+Everything was tested on **macOS 26.7.3 (25G342)**. See which build you have:
 
 ```bash
 sw_vers
 ```
 
-If it is older, update from System Settings. If it is newer, the post-install stops and asks for `--any-build`: nobody has tried that combination. Graphics 0.4.0 says "Tahoe 26.7 or newer" upstream, but that holds for its authors on their hardware.
+If it is older, update from System Settings. If it is newer, the post-install stops and asks for `--any-build`: nobody has tried that combination. Graphics 0.4.1 says "Tahoe 26.7 or newer" upstream, but that holds for its authors on their hardware.
 
 ## 6. Build the drivers
 

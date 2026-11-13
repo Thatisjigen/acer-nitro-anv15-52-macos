@@ -12,9 +12,9 @@ HERE=$(cd "$(dirname "$0")" && pwd)
 SRC=$WORK/src; DEPS=$WORK/deps; OBJ=$WORK/obj; OUT=$WORK/out; LOGS=$WORK/logs
 NM=$SRC/nvidia-macos-driver; LILU=$DEPS/lilu-debug/Lilu.kext; LILU_SDK=$LILU/Contents/Resources; MKSDK=$DEPS/MacKernelSDK
 OGKM=$DEPS/open-gpu-kernel-modules; NVGFX=$DEPS/NvGfx; PKG=$DEPS/nullmoth/pkgroot
-RM=$OBJ/rm; COMPLETION=$RM/completion; JOBS=${JOBS:-$(sysctl -n hw.logicalcpu)}
+JOBS=${JOBS:-$(sysctl -n hw.logicalcpu)}
 CC=$(xcrun -f clang); CXX=$(xcrun -f clang++)
-SDKROOT=$(xcrun --show-sdk-path); export SDKROOT; KHDR="$SDKROOT/System/Library/Frameworks/Kernel.framework/Headers"
+SDKROOT=$(xcrun --show-sdk-path); export SDKROOT
 mkdir -p "$OBJ" "$OUT" "$LOGS"
 say() { echo "== $*"; }
 die() { echo "STOP: $*" >&2; exit 1; }
@@ -24,20 +24,7 @@ export_tree() {   # <checkout> <folder> [paths...]: a clean copy of the pinned c
 }
 stamp() { xattr -cr "$1" 2>/dev/null || true; chmod -R u+rwX,go+rX "$1"; }
 
-# The include paths and -D flags of NVIDIA's RM, for everything that talks to it.
-rm_flags() {
-  local NV=$OGKM/src/nvidia KMS=$OGKM/src/nvidia-modeset C=$OGKM/src/common
-  RMINC=( -I"$NV/arch/nvalloc/unix/include" -I"$NV/arch/nvalloc/common/inc" -I"$NV/arch/nvalloc/common/inc/gsp"
-    -I"$C/sdk/nvidia/inc" -I"$C/sdk/nvidia/inc/hw" -I"$C/inc" -I"$C/shared/inc" -I"$NV/inc" -I"$NV/inc/os" -I"$NV/inc/kernel"
-    -I"$NV/kernel/inc" -I"$NV/interface" -I"$C/nvlink/interface" -I"$C/inc/swref" -I"$C/inc/swref/published"
-    -I"$NV/inc/libraries" -I"$NV/src/libraries" -I"$NV/generated" -I"$NV/src/mm/uvm/interface"
-    -I"$C/uproc/os/libos-v2.0.0/include" -I"$C/uproc/os/common/include" -I"$C/inc/displayport" -I"$C/nvlink/inband/interface" )
-  KMSINC=( -I"$KMS/os-interface/include" -I"$KMS/kapi/interface" -I"$KMS/kapi/include" -I"$C/unix/nvidia-push/interface"
-    -I"$KMS/interface" -I"$KMS/include" -I"$C/unix/common/inc" -I"$C/modeset" -I"$C/unix/common/utils/interface" )
-  RMDEFS=(); while read -r d; do RMDEFS+=("$d"); done < <(head -1 "$NV/_out/Darwin_x86_64/compile_cmds.sh" | tr ' ' '\n' | grep -E '^-D' | sed -e 's/"//g' | grep -v -E '^-D(NVRM|_LANGUAGE_C)$')
-}
-
-# RM and NVKMS of open-gpu-kernel-modules 615.78.08 as static archives, with the Darwin overlay of NvGfx: the part NVRM links. About 10 minutes.
+# RM and NVKMS of open-gpu-kernel-modules 620.70.06 as static archives, with the Darwin overlay of NvGfx: the part NVRM links. About 10 minutes.
 component() {   # <dir under src> <archive> [make vars]
   local dir=$1 lib=$2; shift 2
   local d=$OGKM/src/$dir out=$OGKM/src/$dir/_out/Darwin_x86_64
@@ -56,20 +43,41 @@ component() {   # <dir under src> <archive> [make vars]
 }
 stage_rm() {
   [ "$(git -C "$OGKM" rev-parse HEAD)" = "${OGKM_COMMIT:?}" ] || die "open-gpu-kernel-modules is not at $OGKM_COMMIT"
-  # 615 has the kern_fsp.c half of this patch; NullMoth's release also carries the timer_ostimer.c half.
-  local T=src/nvidia/src/kernel/gpu/timer/timer_ostimer.c P=$NM/kexts/NVRM/patches/610-fsp-timer-double-destroy.patch
-  git -C "$OGKM" apply --include="$T" --reverse --check "$P" 2> /dev/null || git -C "$OGKM" apply --include="$T" "$P"
+  # NullMoth's patches to NVIDIA's tree, kexts/NVRM/patches, go onto the files as they are at the tag, in name order and with no fuzz,
+  # as its own build_rm620.sh applies them. Each one names its files from the top of the tree or from src/nvidia-modeset.
+  # build_nvrm.sh links only against a tree whose .nm-patches lists exactly the patches of the commit it builds.
+  local P=$NM/kexts/NVRM/patches f root ok
+  git -C "$OGKM" checkout -q -- . && : > "$OGKM/.nm-patches"
+  for f in $(cd "$P" && ls *.patch | LC_ALL=C sort); do
+    ok=0
+    for root in . src/nvidia-modeset; do
+      ( cd "$OGKM/$root" && patch -p1 --fuzz=0 --dry-run < "$P/$f" ) > /dev/null 2>&1 || continue
+      ( cd "$OGKM/$root" && patch -p1 --fuzz=0 --no-backup-if-mismatch < "$P/$f" ) > /dev/null || die "$f"
+      ok=1; break
+    done
+    [ $ok = 1 ] || die "$f does not apply to open-gpu-kernel-modules with no fuzz"
+    echo "$f" >> "$OGKM/.nm-patches"
+  done
+  find "$OGKM/src" -name '*.orig' -delete
+  # Only the OS timer fix is in the RM core. The others change NVKMS, one of them a header of its interface: NVKMS is built whole
+  [ -z "$(git -C "$OGKM" status --porcelain --untracked-files=no -- src/nvidia | grep -v timer/timer_ostimer.c)" ] || die "a patch changes the RM core beyond the timer fix"
   component nvidia libnvkernel.a
-  component nvidia-modeset libnvkms.a SHADER_OBJS=
-  # NullMoth's script swaps its patched nvkms-kapi.c and nvkms-rm.c into a copy of libnvkms.a. Its list lacks the viewport patch that
-  # its own release carries: the copy here applies it last.
-  local X=$RM/kexts; export_tree "$NM" "$X"; X=$X/kexts/NVRM
-  sed "s/'610-setmode-reason.patch'\]/'610-setmode-reason.patch','615-viewport-scaling.patch']/" "$X/build-completion-archive.py" > "$X/build-completion-archive-anv.py"
-  grep -q "'615-viewport-scaling.patch'\]" "$X/build-completion-archive-anv.py" || die "the completion script changed: check the viewport patch by hand"
-  rm -rf "$COMPLETION"
-  python3 -I "$X/build-completion-archive-anv.py" --vendor "$OGKM/src/nvidia-modeset" --output "$COMPLETION" > "$LOGS/completion.log" 2>&1 || { tail -20 "$LOGS/completion.log"; die "completion archive"; }
-  local syms; syms=$(nm "$COMPLETION/libnvkms.a" 2> /dev/null)
-  grep -q " t _GetFlipPendingStatus$" <<< "$syms" || die "no GetFlipPendingStatus in the completion archive"
+  rm -rf "$OGKM/src/nvidia-modeset/_out"
+  # NVKMS writes the time of its build into its identity string, which NVRM carries: with the time of the archive that was
+  # tested, the same sources give the same NVRM, UUID included
+  component nvidia-modeset libnvkms.a SHADER_OBJS= DATE="echo ${NVKMS_DATE:?}"
+  local syms; syms=$(nm "$OGKM/src/nvidia-modeset/_out/Darwin_x86_64/libnvkms.a" 2> /dev/null)
+  grep -q " t _GetFlipPendingStatus$" <<< "$syms" || die "no GetFlipPendingStatus in libnvkms.a"
+}
+patched() {   # the tree carries exactly the patches of the fork's commit, and the RM core has its compile commands
+  [ "$(LC_ALL=C sort "$OGKM/.nm-patches" 2> /dev/null | tr '\n' ' ')" = "$(cd "$NM/kexts/NVRM/patches" && ls *.patch | LC_ALL=C sort | tr '\n' ' ')" ] \
+    && [ -f "$OGKM/src/nvidia/_out/Darwin_x86_64/compile_cmds.sh" ] || die "run the rm stage first"
+}
+# The kexts and build scripts of the NVIDIA fork, for NullMoth's own scripts. Their warning ceilings, build/warnings.txt, are upstream's,
+# all 0; the fork's commits leave a few warnings, so the copy opens them
+nm_tree() {   # <folder>
+  export_tree "$NM" "$1" kexts build
+  sed -i '' -E 's/^([a-z0-9-]+) [0-9]+$/\1 100000/' "$1/build/warnings.txt"
 }
 
 # The kext's Info.plist comes from the NullMoth package: the tree's says version 0.1.
@@ -80,46 +88,28 @@ kext_out() {   # <name> <binary>
   stamp "$X"; say "$name $(sha "$X/Contents/MacOS/$name") $(stat -f %z "$X/Contents/MacOS/$name") B"
 }
 
-stage_nvrm() {
-  [ -f "$OGKM/src/nvidia/_out/Darwin_x86_64/libnvkernel.a" ] && [ -f "$COMPLETION/libnvkms.a" ] || die "run the rm stage first"
-  local S=$OBJ/nvrm/src O=$OBJ/nvrm/out G=$OBJ/nvrm/out/glue K
-  export_tree "$NM" "$S" kexts/NVRM; rm -rf "$O"; mkdir -p "$G"; K=$S/kexts/NVRM; rm_flags
-  local NV=$OGKM/src/nvidia KMS=$OGKM/src/nvidia-modeset
-  local FLAGS=( -arch x86_64 -mmacosx-version-min=15.0 -fapple-kext -mkernel -nostdinc -I"$KHDR" -I"$K" "${RMINC[@]}" "${KMSINC[@]}"
-    -DKERNEL -DKERNEL_PRIVATE -DDRIVER_PRIVATE -DAPPLE -DNeXT "${RMDEFS[@]}" -std=c++17 -fno-rtti -fno-exceptions -fno-builtin -fno-common
-    -Wall -Wno-unused-parameter -Wno-inconsistent-missing-override -Wno-unused-function -O2 -ffile-prefix-map="$S"=/src -ffile-prefix-map="$HOME"=/build )
-  local f pids=() rc=0
-  for f in NVRM os-xnu os-xnu2 nv_xnu_stubs nv_xnu_power os-nvkms-xnu nvkms_shaders nvrm_fbinfo nvrm_gpuva nvrm_surfshare nvrm_power; do
-    "$CXX" "${FLAGS[@]}" -c "$K/$f.cpp" -o "$G/$f.o" 2> "$G/$f.err" & pids+=($!)
-  done
-  for f in "${pids[@]}"; do wait "$f" || rc=1; done
-  [ $rc = 0 ] || { grep -h "error:" "$G"/*.err | head -20; die "NVRM glue"; }
-  OGKM=$OGKM python3 -I "$K/rmcc.py" "$K/nvrm_pageoff.c" "$G/nvrm_pageoff.o" 2> "$G/nvrm_pageoff.err" || { cat "$G/nvrm_pageoff.err"; die "nvrm_pageoff"; }
-  OGKM=$OGKM python3 -I "$K/rmcc.py" "$K/nvrm_physctl.c" "$G/nvrm_physctl.o" 2> "$G/nvrm_physctl.err" || { cat "$G/nvrm_physctl.err"; die "nvrm_physctl"; }
-  python3 -I "$NVGFX/build/nvgfx/nvrm/linecc.py" "$KMS" kapi/src/nvkms-kapi.c "$K/nvrm_kapi_fields.c" "$G/nvrm_kapi_fields.o" 2> "$G/nvrm_kapi_fields.err" || { cat "$G/nvrm_kapi_fields.err"; die "nvrm_kapi_fields"; }
-  "$CXX" -arch x86_64 -mmacosx-version-min=15.0 -fapple-kext -nostdlib -Xlinker -kext \
-    "$G/nv_xnu_stubs.o" "$G/nvkms_shaders.o" "$G/nvrm_fbinfo.o" "$G/nvrm_gpuva.o" "$G/nvrm_surfshare.o" "$G/NVRM.o" \
-    "$G/os-nvkms-xnu.o" "$G/os-xnu.o" "$G/os-xnu2.o" "$G/nv_xnu_power.o" "$G/nvrm_kapi_fields.o" "$G/nvrm_pageoff.o" \
-    "$G/nvrm_power.o" "$G/nvrm_physctl.o" "$NV/_out/Darwin_x86_64/libnvkernel.a" "$COMPLETION/libnvkms.a" \
-    -lkmodc++ -lkmod -lcc_kext -o "$O/NVRM" > "$O/link.log" 2>&1 || { grep -v "built for newer macOS" "$O/link.log" | head -30; die "NVRM link"; }
-  kext_out NVRM "$O/NVRM"
+stage_nvrm() {   # NullMoth's build_nvrm.sh, against the two archives of the rm stage
+  patched
+  [ -f "$OGKM/src/nvidia/_out/Darwin_x86_64/libnvkernel.a" ] && [ -f "$OGKM/src/nvidia-modeset/_out/Darwin_x86_64/libnvkms.a" ] || die "run the rm stage first"
+  local S=$OBJ/nvrm/src O=$OBJ/nvrm/out
+  nm_tree "$S"
+  ( cd "$S" && bash build/build_nvrm.sh kexts/NVRM "$OGKM" "$O" ) > "$LOGS/nvrm.log" 2>&1 || { tail -8 "$LOGS/nvrm.log"; die "NVRM"; }
+  kext_out NVRM "$O/NVRM.kext/Contents/MacOS/NVRM"
 }
 
-stage_nvrmfb() {
-  local S=$OBJ/nvrmfb/src O=$OBJ/nvrmfb/out SR
-  export_tree "$NM" "$S" kexts/NVRMFB kexts/NVRM kexts/NMHDA; rm -rf "$O"; mkdir -p "$O"; SR=$S/kexts/NVRMFB; rm_flags
-  "$CXX" -arch x86_64 -fapple-kext -mkernel -nostdinc -I"$KHDR" -DKERNEL -DKERNEL_PRIVATE -DDRIVER_PRIVATE -DAPPLE -DNeXT \
-    -std=c++17 -fno-rtti -fno-exceptions -fno-builtin -fno-common -Wall -Wno-unused-parameter -Wno-inconsistent-missing-override -Wno-unused-function -O2 \
-    -ffile-prefix-map="$S"=/src -ffile-prefix-map="$HOME"=/build -I"$SR" -I"$S/kexts/NVRM" "${RMINC[@]}" "${KMSINC[@]}" "${RMDEFS[@]}" -I"$SR/fb" \
-    -c "$SR/fb/nvrm-fb.cpp" -o "$O/nvrm-fb.o" 2> "$O/fb.err" || { grep error "$O/fb.err" | head -20; die "NVRMFB compile"; }
-  "$CXX" -arch x86_64 -fapple-kext -nostdlib -Xlinker -kext -lkmodc++ -lkmod -lcc_kext "$O/nvrm-fb.o" -o "$O/NVRMFB" > "$O/link.log" 2>&1 || { head -20 "$O/link.log"; die "NVRMFB link"; }
-  kext_out NVRMFB "$O/NVRMFB"
+stage_nvrmfb() {   # NullMoth's fb_build.sh: NVKMS's interface headers as the patches leave them, no RM archive
+  patched
+  local S=$OBJ/nvrmfb/src O=$OBJ/nvrmfb/out
+  nm_tree "$S"; rm -rf "$O"
+  ( cd "$S" && OGKM="$OGKM" bash build/fb_build.sh kexts "$O" ) > "$LOGS/nvrmfb.log" 2>&1 || { tail -20 "$LOGS/nvrmfb.log"; die "NVRMFB"; }
+  kext_out NVRMFB "$O/NVRMFB.kext/Contents/MacOS/NVRMFB"
 }
 
 stage_nvaccel() {   # NullMoth's own script, without NM_TAHOE: its macOS 26 variant is not what was tested
+  patched
   local S=$OBJ/nvaccel/src O=$OBJ/nvaccel/out
-  export_tree "$NM" "$S" kexts/NVRM build/accel_build.sh; rm -rf "$O"
-  ( cd "$S" && OGKM="$OGKM" bash build/accel_build.sh kexts/NVRM "$O" ) > "$LOGS/nvaccel.log" 2>&1 || { tail -20 "$LOGS/nvaccel.log"; die "NVAccel"; }
+  nm_tree "$S"; rm -rf "$O"
+  ( cd "$S" && unset NM_TAHOE && OGKM="$OGKM" bash build/accel_build.sh kexts/NVRM "$O" ) > "$LOGS/nvaccel.log" 2>&1 || { tail -20 "$LOGS/nvaccel.log"; die "NVAccel"; }
   kext_out NVAccel "$O/NVAccel.kext/Contents/MacOS/NVAccel"
 }
 
@@ -139,20 +129,21 @@ mksdk() { local to=$OBJ/MacKernelSDK; [ -d "$to/Headers" ] || { mkdir -p "$to"; 
 
 stage_nmhda() {   # injected by OpenCore, not installed in /Library
   local S=$OBJ/nmhda/src O=$OBJ/nmhda/out
-  export_tree "$NM" "$S" kexts/NMHDA; rm -rf "$O"; mkdir -p "$O"
+  nm_tree "$S"; rm -rf "$O"; mkdir -p "$O"
   # the date goes into the kext's version: this one gives the binary that ran
   SOURCE_DATE_EPOCH=$(epoch "${NMHDA_DATE:?}") bash "$S/kexts/NMHDA/build.sh" "$LILU" "$(mksdk)" "$O" > "$LOGS/nmhda.log" 2>&1 || { tail -20 "$LOGS/nmhda.log"; die "NMHDA"; }
   rm -rf "$OUT/NMHDA.kext"; cp -R "$O/NMHDA.kext" "$OUT/NMHDA.kext"; stamp "$OUT/NMHDA.kext"
   say "NMHDA $(sha "$OUT/NMHDA.kext/Contents/MacOS/NMHDA")"
 }
 
-stage_plugin() {   # NVMTLDriver: Objective-C against Mesa's Vulkan headers
+stage_plugin() {   # NVMTLDriver: Objective-C against Mesa's Vulkan headers, with its DLSS loader in C
   local S=$OBJ/plugin/src INC=$DEPS/mesa-include/include
   [ -f "$INC/vulkan/vulkan_core.h" ] || die "no Mesa headers in $INC"
   export_tree "$NM" "$S" plugin; mkdir -p "$OUT/bundle"
   ( cd "$S/plugin" && xcrun clang -arch x86_64 -mmacosx-version-min=15.0 -bundle -fobjc-arc -O1 -DNVMTL_RELEASE=1 \
-      -Wno-protocol -Wno-incomplete-implementation -Werror=unguarded-availability-new -I"$INC" -o "$OUT/bundle/NVMTLDriver" NVMTLDevice.m \
-      -framework Foundation -framework Metal -framework IOSurface -framework IOKit -framework CoreFoundation -framework MetalFX ) > "$LOGS/plugin.log" 2>&1 || { grep ' error:' "$LOGS/plugin.log" | head -20; die "plugin"; }
+      -Wno-protocol -Wno-incomplete-implementation -Werror=unguarded-availability-new -I"$INC" -o "$OUT/bundle/NVMTLDriver" \
+      NVMTLDevice.m nvmtl_dlss.c dlss/elfhost.c dlss/lnxlibc.c \
+      -framework Foundation -framework Metal -framework IOSurface -framework IOKit -framework CoreFoundation -framework MetalFX -liconv ) > "$LOGS/plugin.log" 2>&1 || { grep -E ' error:|ld:|Undefined' "$LOGS/plugin.log" | head -20; die "plugin"; }
   codesign -f -s - "$OUT/bundle/NVMTLDriver" 2> /dev/null
   say "NVMTLDriver $(sha "$OUT/bundle/NVMTLDriver")"
 }
@@ -183,19 +174,22 @@ stage_translator() {   # libnvmtl_translate: Rust, toolchain and crates under $W
   say "libnvmtl_translate $(sha "$D")"
 }
 
-stage_nvenc() {   # libnvencvt: the decoders for H.264, HEVC, VP9 and AV1 on the RTX 5050
+stage_nvenc() {   # libnvencvt: the decoders for H.264, HEVC, VP9 and AV1 on the RTX 5050, with the frames untiled on the Iris Xe
   local F=$SRC/nvenc K=$DEPS/open-gpu-kernel-modules-610 D=$DEPS/open-gpu-doc S=$DEPS/webkit-spi W=$OBJ/nvenc
   export_tree "$F" "$W" src vt; mkdir -p "$OUT/bundle" "$W/o"; : > "$LOGS/nvenc.log"
-  # one object at a time, with fixed names: clang's own temporary names make the linker order differ at every build
-  local f objs=()
-  for f in "$W/vt/nvencvt.c" "$W/vt/nvencvt_dec.c" "$W"/src/*.c; do
-    objs+=("$W/o/$(basename "$f" .c).o")
-    xcrun clang -O2 -Wall -DNVENC_VERSION="\"${NVENC_VERSION:?}\"" -I "$W/src" -I "$S" -I "$K/src/common/sdk/nvidia/inc" -I "$K/src/nvidia/arch/nvalloc/unix/include" -I "$D/classes/video" \
+  # one object at a time, with fixed names: clang's own temporary names make the linker order differ at every build. The order is the
+  # fork's build.sh: vt/nvencvt.c, its C and Objective-C parts (the Metal untile, with ARC), then src
+  local f objs=() arc
+  for f in "$W/vt/nvencvt.c" "$W"/vt/nvencvt_*.c "$W"/vt/nvencvt_*.m "$W"/src/*.c; do
+    [ -f "$f" ] || continue
+    objs+=("$W/o/$(basename "${f%.*}").o"); arc=(); [ "${f##*.}" = m ] && arc=(-fobjc-arc)
+    xcrun clang -O2 -Wall ${arc[@]+"${arc[@]}"} -DNVENC_VERSION="\"${NVENC_VERSION:?}\"" -I "$W/src" -I "$S" -I "$K/src/common/sdk/nvidia/inc" -I "$K/src/nvidia/arch/nvalloc/unix/include" -I "$D/classes/video" \
       -c "$f" -o "${objs[${#objs[@]}-1]}" >> "$LOGS/nvenc.log" 2>&1 || { grep 'error:' "$LOGS/nvenc.log" | head; die "nvenc"; }
   done
   # the internal name, by default the output path, decides where the linker puts things: a fixed one gives the same file on every machine
   xcrun clang -dynamiclib -Wl,-install_name,/Library/GPUBundles/NVMTLDriver.bundle/Contents/MacOS/libnvdec_h264.dylib -o "$OUT/bundle/libnvencvt.dylib" "${objs[@]}" \
-    -framework IOKit -framework CoreFoundation -framework CoreMedia -framework CoreVideo -framework VideoToolbox -framework Accelerate -framework IOSurface >> "$LOGS/nvenc.log" 2>&1 \
+    -framework IOKit -framework CoreFoundation -framework CoreMedia -framework CoreVideo -framework VideoToolbox -framework Accelerate -framework IOSurface \
+    -framework Metal -framework Foundation >> "$LOGS/nvenc.log" 2>&1 \
     || { grep 'error:' "$LOGS/nvenc.log" | head; die "nvenc link"; }
   codesign -f -s - "$OUT/bundle/libnvencvt.dylib" 2> /dev/null
   say "libnvencvt $(sha "$OUT/bundle/libnvencvt.dylib")"
@@ -418,7 +412,17 @@ stage_nmappfree() {   # Chrome's Widevine with the AMFI boot-args: a Lilu plugin
   say "NMAppFree $(sha "$OUT/NMAppFree.kext/Contents/MacOS/NMAppFree")"
 }
 
-ALL="rm nvrm nvrmfb nvaccel nvrmagdc nmhda plugin translator nvenc ngshim latsof nitrosense smcnvidiagpu whateverxe hybridpm applealc idisphda mtkwlan mtkbt nmappfree"
+stage_usbkeeper() {   # USBDiskKeeper: the USB disk OpenCore starts from stays attached when its port drops it at wake. A Lilu plugin injected by OpenCore; its own build.sh, given the Lilu and MacKernelSDK above, downloads nothing
+  local W=$OBJ/usbkeeper/src O=$OBJ/usbkeeper/out
+  export_tree "$SRC/USBKeeper" "$W"; rm -rf "$O"
+  # the time of the commit goes into the kext's version, as when its build.sh runs in a checkout
+  SOURCE_DATE_EPOCH=$(git -C "$SRC/USBKeeper" log -1 --format=%ct HEAD) MKSDK="$MKSDK" LILU_ZIP="$DEPS/lilu-debug.zip" \
+    bash "$W/build.sh" Release "$O" > "$LOGS/usbkeeper.log" 2>&1 || { tail -20 "$LOGS/usbkeeper.log"; die "USBDiskKeeper"; }
+  rm -rf "$OUT/USBDiskKeeper.kext"; cp -R "$O/USBDiskKeeper.kext" "$OUT/USBDiskKeeper.kext"; stamp "$OUT/USBDiskKeeper.kext"
+  say "USBDiskKeeper $(sha "$OUT/USBDiskKeeper.kext/Contents/MacOS/USBDiskKeeper")"
+}
+
+ALL="rm nvrm nvrmfb nvaccel nvrmagdc nmhda plugin translator nvenc ngshim latsof nitrosense smcnvidiagpu whateverxe hybridpm applealc idisphda mtkwlan mtkbt nmappfree usbkeeper"
 [ $# -gt 0 ] || set -- $ALL
 for s in "$@"; do
   case " $ALL " in *" $s "*) ;; *) die "no stage $s; stages: $ALL" ;; esac

@@ -5,7 +5,7 @@ Two profiles, built by `efi/build_efi.py` in `build/EFI/EFI/`:
 | Profile | Folder | What for | Compile? |
 | --- | --- | --- | --- |
 | `install` | `OC-INSTALL` | Install macOS, recovery. The config that installed macOS on the test machine | No, downloads only |
-| `full` | `OC` | The system with the drivers | Yes: ten kexts, from the forks and NMAppFree |
+| `full` | `OC` | The system with the drivers | Yes: eleven kexts, from the forks, NMAppFree and USBKeeper |
 
 Neither has `EFI/BOOT/BOOTx64.efi`, and `LauncherOption` is `Disabled`: rEFInd stays the main boot manager and OpenCore is one of its entries ([refind-opencore.conf](refind-opencore.conf)). Linux and Windows start from their own rEFInd entries, without going through OpenCore.
 
@@ -56,36 +56,37 @@ The EDID in `DeviceProperties` (`AAPL00,override-no-connect`) is the one of the 
 
 | Group | Kexts |
 | --- | --- |
-| Base | Lilu, AMFIPass, RestrictEvents, CpuTopologyRebuild, HybridPM (on with `-hpm`), NVMeFix, NMAppFree (Chrome's Widevine with the AMFI boot-args) |
+| Base | Lilu, RestrictEvents, CpuTopologyRebuild, HybridPM (on unless `-nohpm`), NVMeFix, NMAppFree (Chrome's Widevine with the AMFI boot-args) |
 | Graphics | WhateverXe (DEBUG build, in place of WhateverGreen), BrightnessKeys |
 | Audio | AppleALC, SimpleHDA, NMHDA, IDispHDA (the Iris Xe over USB-C) |
-| SMC | VirtualSMC, SMCBatteryManager, SMCLightSensor, SMCProcessor, SMCSuperIO, SMCNvidiaGPU |
-| Input | VoodooI2C with its plugins, VoodooI2CHID, VoodooPS2Controller with its plugins |
-| USB | USBToolBox, UTBMap-ANV, XHCI-unsupported |
+| SMC | VirtualSMC, SMCBatteryManager, SMCNvidiaGPU |
+| Input | VoodooI2C with its plugins, VoodooI2CHID, VoodooPS2Controller with its keyboard plugin |
+| USB | USBToolBox, UTBMap-ANV, XHCI-unsupported, USBDiskKeeper (the USB stick OpenCore starts from stays attached when its port drops it at wake) |
 | Network | RealtekRTL8111, AirportMtkWlan, SimpleMtkBtFw, SimpleMtkBtPatcher, BlueToolFixup: the original MediaTek MT7920. SimpleMtkBtFw gets one more USB match, `13D3:3622`, the Bluetooth of this laptop. SimpleMtkBtPatcher is compiled from the fork: it touches only the transfers of the MediaTek controller, and prepares USB buffers read only, without the backtraces the release logs for every USB transfer |
 | Laptop | NitroEC |
 
 Present and disabled: UTBDefault, EHD0Off-ANV, USBPorts, WhateverGreen, itlwm, and AirportItlwm, IntelBluetoothFirmware and IntelBTPatcher. **With an Intel card** in place of the MT7920, enable those three and disable AirportMtkWlan, SimpleMtkBtFw and SimpleMtkBtPatcher: that was tested with an AC 8265.
 
+Also present and disabled, because at boot they find nothing on this laptop: SMCLightSensor (no light sensor), SMCProcessor (no processor it supports), SMCSuperIO (no SuperIO chip), VoodooPS2Mouse and VoodooPS2Trackpad (the trackpad is on I2C), and AMFIPass, which has nothing to do once the AMFI boot-args below are set.
+
 ## Boot-args of the `full` profile
 
 | Boot-arg | Whose | What for |
 | --- | --- | --- |
-| `-v keepsyms=1 debug=0x100` | macOS | Text boot, symbols in panics, no restart after a panic |
+| `keepsyms=1` | macOS | Symbols in panics |
 | `ctrsmt=full` | CpuTopologyRebuild | Core topology |
-| `revpatch=sbvmm,cpuname revcpu=1` | RestrictEvents | CPU name, updates |
-| `nvfb=1 nvaccel=1 nvfbheads=4 -nvkmsnosmooth` | NullMoth | Framebuffer and accelerator of the RTX |
 | `amfi_get_out_of_my_way=0x1 amfi=0x80 ipc_control_port_options=0` | NullMoth, Graphics | WindowServer can load Metal drivers not signed by Apple. Without them the kernel rejects both plugins and the desktop does not arrive. They also put every app under the kernel's strictest Mach IPC rules: NMAppFree takes the user apps back out, see the [README](../README.md#chrome-and-nmappfree) |
-| `gfxrst=4` | WhateverXe, NullMoth | No copy of the boot screen |
-| `-allow3d -disablegfxfirmware -igfxdvmt` | WhateverXe | Intel acceleration, fixed stolen memory |
-| `-wexdbg -wex-display13-trace -liludbg liludump=90` | WhateverXe, Lilu | Logs: the kext is the DEBUG build |
-| `-wex-reset-recover` | WhateverXe | Recovery from GPU hangs. No real hang has triggered it yet |
-| `-wex-scanout-coherent -wex-hidpi-dbuf` | WhateverXe | What scaled modes need: coherent scanout, and a larger display buffer for primary plane and cursor |
-| `nvrmtgp=1` | NVRM | TGP mode of the GSP; the limit goes up only on request |
-| `-wex-hdr-modes -wex-hdr-sgx` | WhateverXe | The HDR switch for a monitor on USB-C |
-| `-hpm hpmepp=96` | HybridPM | CPU turbo: one core at 4.64 GHz, about 10 W more at idle |
-| `-mtkhe` | AirportMtkWlan | Wi-Fi 6 on the MT7920 |
-| `-nmintelfboff`, `wexdpalt=0x8` | | No effect here: the first is for NMIntelFB, which is not installed, and 0.7.0 ignores the second. They stay to match the tested profile |
+| `-allow3d -disablegfxfirmware` | WhateverXe | Intel acceleration |
+| `-wex-nv-video` | WhateverXe | Safari's GPU process may map the NVIDIA runtime, so Safari decodes H.264, HEVC and VP9 on the RTX |
+| `-wex-va-renderer` | WhateverXe | The Intel video driver's image conversion, corrected for this GPU: hardware video processing on the Iris Xe. Experimental |
+| `nvwallpaper=1` | NVIDIA Metal plugin | The Aerial wallpaper and its preview in Settings › Displays decode on the RTX |
+| `nvrmaspm=1` | NVRM | Asks for PCIe ASPM L1 on the RTX's link. Nothing changes here: the port above the RTX offers no ASPM |
+| `nvrmfbddc=1` | NVRMFB | A DDC/CI bus for each monitor on the RTX, for monitor-control apps. Tested here: the brightness read from the monitor |
+| `nvfb10bit=1 nvfbhdr=1` | NVRMFB | HDR10 on the RTX's HDMI, for a monitor whose EDID lists PQ. 10-bit output alone shows no change here |
+| `nvfbkeepfront=1` | NVRMFB | The frame stays on screen across a mode change. Not judged yet |
+| `nvfbvrr=1` | NVRMFB | Variable refresh, when the monitor offers it. Not testable here: the monitor gives no VRR range over HDMI |
+
+On in the kexts themselves, each with a boot-arg that turns it off: the framebuffer, accelerator and four heads of the RTX; in WhateverXe the recovery from GPU hangs (`-wex-no-reset-recover`), coherent scanout and the larger display buffer that scaled modes need (`-wex-no-scanout-coherent`, `-wex-no-hidpi-dbuf`), the HDR switch for a monitor on USB-C (`-wex-no-hdr-modes`, `-wex-no-hdr-sgx`); HybridPM's turbo (`-nohpm`); Wi-Fi 6 on the MT7920 (`-mtknohe`).
 
 ## Differences from the tested EFIs
 
@@ -96,7 +97,6 @@ Present and disabled: UTBDefault, EHD0Off-ANV, USBPorts, WhateverGreen, itlwm, a
 - the identity;
 - 15 keys an editor had dropped, put back with the value OpenCore 1.0.9 uses when they are absent, so that `ocvalidate` passes: same behaviour. Among them `FixupAppleEfiImages`, `false` because that is what its absence meant in the tests. `InitialMode` is `Auto`: an empty one is illegal for `ocvalidate`;
 - `-nmappfreedbg`, NMAppFree's log line for each app it exempts, left out;
-- `-mtkhe`, added: the test machine's working config does not have it yet, its test entry does (see the [README](../README.md#boot-args-you-can-take-out));
 - the comments.
 
 Among the binaries, everything downloaded matches the test machine byte for byte, except:
@@ -104,7 +104,7 @@ Among the binaries, everything downloaded matches the test machine byte for byte
 | File | Difference |
 | --- | --- |
 | `AirportItlwm` | Tested: build `738d4c6`. Downloaded: `7204c69`, because the `v2.4.0-alpha` release was published again and the old build is gone. **Not tested** |
-| `WhateverXe`, `AppleALC`, `NMHDA`, `SMCNvidiaGPU`, `HybridPM`, `NitroEC`, `IDispHDA`, `AirportMtkWlan`, `SimpleMtkBtPatcher`, `NMAppFree` | Compiled by you, from the latest commit of the forks and of NMAppFree: see [postinstall/README.md](../postinstall/README.md). `AirportMtkWlan` holds MediaTek's firmware: do not publish it |
+| `WhateverXe`, `AppleALC`, `NMHDA`, `SMCNvidiaGPU`, `HybridPM`, `NitroEC`, `IDispHDA`, `AirportMtkWlan`, `SimpleMtkBtPatcher`, `NMAppFree`, `USBDiskKeeper` | Compiled by you, from the latest commit of the forks, of NMAppFree and of USBKeeper: see [postinstall/README.md](../postinstall/README.md). `AirportMtkWlan` holds MediaTek's firmware: do not publish it |
 | `SimpleMtkBtFw` | The `Info.plist` gets the USB match of this laptop's Bluetooth, the same as on the test machine |
 | `UTBMap-ANV`, `EHD0Off-ANV` | Only comment strings in their `Info.plist` |
 

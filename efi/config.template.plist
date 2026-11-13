@@ -270,6 +270,24 @@
 				<key>Arch</key>
 				<string>x86_64</string>
 				<key>BundlePath</key>
+				<string>NMAppFree.kext</string>
+				<key>Comment</key>
+				<string>NMAppFree: user apps out of the strict Mach IPC policy of the AMFI boot-args, so Widevine works in Chrome; needs Lilu</string>
+				<key>Enabled</key>
+				<true/>
+				<key>ExecutablePath</key>
+				<string>Contents/MacOS/NMAppFree</string>
+				<key>MaxKernel</key>
+				<string></string>
+				<key>MinKernel</key>
+				<string></string>
+				<key>PlistPath</key>
+				<string>Contents/Info.plist</string>
+			</dict>
+			<dict>
+				<key>Arch</key>
+				<string>x86_64</string>
+				<key>BundlePath</key>
 				<string>AppleALC.kext</string>
 				<key>Comment</key>
 				<string>AppleALC 1.9.8 with ALC245 layouts 66 and 67, fork branch acer/current</string>
@@ -344,9 +362,9 @@
 				<key>BundlePath</key>
 				<string>AMFIPass.kext</string>
 				<key>Comment</key>
-				<string>AMFIPass 1.4.1 Mod, from WhateverXe-Graphics extras/</string>
+				<string>AMFIPass 1.4.1 Mod, from WhateverXe-Graphics extras/: off, it has nothing to do with the AMFI boot-args</string>
 				<key>Enabled</key>
-				<true/>
+				<false/>
 				<key>ExecutablePath</key>
 				<string>Contents/MacOS/AMFIPass</string>
 				<key>MaxKernel</key>
@@ -488,9 +506,9 @@
 				<key>BundlePath</key>
 				<string>SMCLightSensor.kext</string>
 				<key>Comment</key>
-				<string>V1.3.9</string>
+				<string>VirtualSMC 1.3.9: off, it finds no light sensor on this laptop</string>
 				<key>Enabled</key>
-				<true/>
+				<false/>
 				<key>ExecutablePath</key>
 				<string>Contents/MacOS/SMCLightSensor</string>
 				<key>MaxKernel</key>
@@ -506,9 +524,9 @@
 				<key>BundlePath</key>
 				<string>SMCProcessor.kext</string>
 				<key>Comment</key>
-				<string>V1.3.9</string>
+				<string>VirtualSMC 1.3.9: off, it finds no processor it supports on this laptop</string>
 				<key>Enabled</key>
-				<true/>
+				<false/>
 				<key>ExecutablePath</key>
 				<string>Contents/MacOS/SMCProcessor</string>
 				<key>MaxKernel</key>
@@ -524,9 +542,9 @@
 				<key>BundlePath</key>
 				<string>SMCSuperIO.kext</string>
 				<key>Comment</key>
-				<string>V1.3.9</string>
+				<string>VirtualSMC 1.3.9: off, it finds no SuperIO chip on this laptop</string>
 				<key>Enabled</key>
-				<true/>
+				<false/>
 				<key>ExecutablePath</key>
 				<string>Contents/MacOS/SMCSuperIO</string>
 				<key>MaxKernel</key>
@@ -776,9 +794,9 @@
 				<key>BundlePath</key>
 				<string>VoodooPS2Controller.kext/Contents/PlugIns/VoodooPS2Mouse.kext</string>
 				<key>Comment</key>
-				<string>V2.3.8</string>
+				<string>VoodooPS2 2.3.8: off, the trackpad is on I2C</string>
 				<key>Enabled</key>
-				<true/>
+				<false/>
 				<key>ExecutablePath</key>
 				<string>Contents/MacOS/VoodooPS2Mouse</string>
 				<key>MaxKernel</key>
@@ -794,9 +812,9 @@
 				<key>BundlePath</key>
 				<string>VoodooPS2Controller.kext/Contents/PlugIns/VoodooPS2Trackpad.kext</string>
 				<key>Comment</key>
-				<string>V2.3.8</string>
+				<string>VoodooPS2 2.3.8: off, the trackpad is on I2C</string>
 				<key>Enabled</key>
-				<true/>
+				<false/>
 				<key>ExecutablePath</key>
 				<string>Contents/MacOS/VoodooPS2Trackpad</string>
 				<key>MaxKernel</key>
@@ -830,7 +848,7 @@
 				<key>BundlePath</key>
 				<string>WhateverXe.kext</string>
 				<key>Comment</key>
-				<string>WhateverXe 0.7.0 DEBUG, fork branch acer/current; in place of WhateverGreen</string>
+				<string>WhateverXe 0.8.2 DEBUG, fork branch acer/current; in place of WhateverGreen</string>
 				<key>Enabled</key>
 				<true/>
 				<key>ExecutablePath</key>
@@ -902,7 +920,7 @@
 				<key>BundlePath</key>
 				<string>AirportMtkWlan.kext</string>
 				<key>Comment</key>
-				<string>AirportMtkWlan of SimpleMtkWlan, fork branch acer/current: the original MT7920 Wi-Fi card, Wi-Fi 6 with -mtkhe, firmware generated at build</string>
+				<string>AirportMtkWlan of SimpleMtkWlan, fork branch acer/current: the original MT7920 Wi-Fi card, Wi-Fi 6 unless -mtknohe, firmware generated at build</string>
 				<key>Enabled</key>
 				<true/>
 				<key>ExecutablePath</key>
@@ -1028,7 +1046,7 @@
 				<key>BundlePath</key>
 				<string>HybridPM.kext</string>
 				<key>Comment</key>
-				<string>XE-PM (JulioNectar, TSNPL 1.0) as a Lilu plugin; -hpm hpmepp=96 in boot-args turns it on</string>
+				<string>XE-PM (JulioNectar, TSNPL 1.0) as a Lilu plugin; on by default, -nohpm in boot-args turns it off</string>
 				<key>Enabled</key>
 				<true/>
 				<key>ExecutablePath</key>
@@ -1060,19 +1078,19 @@
 			</dict>
 			<dict>
 				<key>Arch</key>
-				<string>Any</string>
+				<string>x86_64</string>
 				<key>BundlePath</key>
-				<string>NMAppFree.kext</string>
+				<string>USBDiskKeeper.kext</string>
 				<key>Comment</key>
-				<string>NMAppFree: user apps out of the strict Mach IPC policy of the AMFI boot-args, so Widevine works in Chrome; needs Lilu</string>
+				<string>USBDiskKeeper, USBKeeper main: the USB disk OpenCore starts from stays attached when its port drops it at wake; needs Lilu</string>
 				<key>Enabled</key>
 				<true/>
 				<key>ExecutablePath</key>
-				<string>Contents/MacOS/NMAppFree</string>
+				<string>Contents/MacOS/USBDiskKeeper</string>
 				<key>MaxKernel</key>
-				<string></string>
+				<string>25.99.99</string>
 				<key>MinKernel</key>
-				<string></string>
+				<string>25.0.0</string>
 				<key>PlistPath</key>
 				<string>Contents/Info.plist</string>
 			</dict>
@@ -1471,7 +1489,7 @@
 				AAAAAAAAAAAAAAAAAAA=
 				</data>
 				<key>boot-args</key>
-				<string>debug=0x100 keepsyms=1 ctrsmt=full revpatch=sbvmm,cpuname nvfb=1 nvaccel=1 nvfbheads=4 -nvkmsnosmooth amfi_get_out_of_my_way=0x1 amfi=0x80 ipc_control_port_options=0 gfxrst=4 revcpu=1 -v -nmintelfboff -allow3d -disablegfxfirmware -igfxdvmt -wexdbg -wex-display13-trace -liludbg liludump=90 nvrmtgp=1 wexdpalt=0x8 -wex-reset-recover -wex-scanout-coherent -wex-hidpi-dbuf -wex-hdr-modes -wex-hdr-sgx -hpm hpmepp=96 -mtkhe</string>
+				<string>keepsyms=1 ctrsmt=full amfi_get_out_of_my_way=0x1 amfi=0x80 ipc_control_port_options=0 -allow3d -disablegfxfirmware nvrmaspm=1 nvrmfbddc=1 nvfbkeepfront=1 nvfb10bit=1 nvfbhdr=1 nvfbvrr=1 -wex-va-renderer -wex-nv-video nvwallpaper=1</string>
 				<key>csr-active-config</key>
 				<data>
 				QwoAAA==

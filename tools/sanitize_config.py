@@ -39,20 +39,26 @@ KEXT_COMMENTS = {
     'Lilu.kext': 'Lilu 1.7.2 DEBUG, needed by the DEBUG build of WhateverXe',
     'AppleALC.kext': 'AppleALC 1.9.8 with ALC245 layouts 66 and 67, fork branch acer/current',
     'NMHDA.kext': 'NMHDA of NullMoth, fork branch acer/current: HDMI audio of the RTX, 10DE:22EC',
-    'AMFIPass.kext': 'AMFIPass 1.4.1 Mod, from WhateverXe-Graphics extras/',
+    'AMFIPass.kext': 'AMFIPass 1.4.1 Mod, from WhateverXe-Graphics extras/: off, it has nothing to do with the AMFI boot-args',
+    'SMCLightSensor.kext': 'VirtualSMC 1.3.9: off, it finds no light sensor on this laptop',
+    'SMCProcessor.kext': 'VirtualSMC 1.3.9: off, it finds no processor it supports on this laptop',
+    'SMCSuperIO.kext': 'VirtualSMC 1.3.9: off, it finds no SuperIO chip on this laptop',
+    'VoodooPS2Controller.kext/Contents/PlugIns/VoodooPS2Mouse.kext': 'VoodooPS2 2.3.8: off, the trackpad is on I2C',
+    'VoodooPS2Controller.kext/Contents/PlugIns/VoodooPS2Trackpad.kext': 'VoodooPS2 2.3.8: off, the trackpad is on I2C',
     'SMCNvidiaGPU.kext': 'RTX sensors for VirtualSMC, fork branch acer/current; built together with NVRM',
-    'WhateverXe.kext': 'WhateverXe 0.7.0 DEBUG, fork branch acer/current; in place of WhateverGreen',
-    'HybridPM.kext': 'XE-PM (JulioNectar, TSNPL 1.0) as a Lilu plugin; -hpm hpmepp=96 in boot-args turns it on',
+    'WhateverXe.kext': 'WhateverXe 0.8.2 DEBUG, fork branch acer/current; in place of WhateverGreen',
+    'HybridPM.kext': 'XE-PM (JulioNectar, TSNPL 1.0) as a Lilu plugin; on by default, -nohpm in boot-args turns it off',
     'NitroEC.kext': 'NitroEC, fork branch acer/current: EC window 0xFE708500',
     'AirportItlwm.kext': 'AirportItlwm 2.4.0-alpha laobamac: only for an Intel card, in place of the MT7920',
     'IntelBluetoothFirmware.kext': 'Intel Bluetooth 2.5.2 lshbluesky: only for an Intel card',
     'IntelBTPatcher.kext': 'Intel Bluetooth 2.5.2 lshbluesky: only for an Intel card',
     'BlueToolFixup.kext': 'BrcmPatchRAM 2.7.2: for the Bluetooth of either card',
-    'AirportMtkWlan.kext': 'AirportMtkWlan of SimpleMtkWlan, fork branch acer/current: the original MT7920 Wi-Fi card, Wi-Fi 6 with -mtkhe, firmware generated at build',
+    'AirportMtkWlan.kext': 'AirportMtkWlan of SimpleMtkWlan, fork branch acer/current: the original MT7920 Wi-Fi card, Wi-Fi 6 unless -mtknohe, firmware generated at build',
     'SimpleMtkBtFw.kext': 'SimpleMtkBtFw 1.1.0 DEBUG with the USB match 13D3:3622 of this laptop: Bluetooth of the MT7920',
     'SimpleMtkBtPatcher.kext': 'SimpleMtkBtPatcher, fork branch acer/current: Bluetooth of the MT7920, USB buffers read only',
     'IDispHDA.kext': 'IDispHDA, AppleALC fork branch acer/current: audio of the Iris Xe over USB-C',
     'NMAppFree.kext': 'NMAppFree: user apps out of the strict Mach IPC policy of the AMFI boot-args, so Widevine works in Chrome; needs Lilu',
+    'USBDiskKeeper.kext': 'USBDiskKeeper, USBKeeper main: the USB disk OpenCore starts from stays attached when its port drops it at wake; needs Lilu',
 }
 ACPI_COMMENTS = {'SSDT-NITRO.aml': 'NTRO device for NitroEC: EC RAM window 0xFE708500, firmware controls, Darwin only'}
 COMMENTS = {
@@ -61,10 +67,9 @@ COMMENTS = {
     'VoodooI2C waits for VoodooGPIO without a limit, not 1 s': 'VoodooI2C waits for VoodooGPIO without a limit instead of 1 s, or the trackpad can stay absent',
 }
 REFERENCE = re.compile(r'\b[A-Z]+-\d{3}\b(?: fallback)?')
-# -nmappfreedbg, a log line for each app NMAppFree exempts, is left out. HDR, turbo and Wi-Fi 6 stay on: -mtkhe is added, the working
-# config of the test machine does not have it yet
+# -nmappfreedbg, a log line for each app NMAppFree exempts, is left out. HDR modes, turbo and Wi-Fi 6 are on in the kexts themselves
 BOOT_ARGS_LEFT_OUT = ['-nmappfreedbg']
-BOOT_ARGS_ADDED = ['-mtkhe']
+BOOT_ARGS_ADDED = []
 # An experiment still listed, disabled, in the config this comes from
 KEXTS_LEFT_OUT = []
 
