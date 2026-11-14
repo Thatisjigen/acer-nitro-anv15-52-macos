@@ -35,7 +35,7 @@ The copies are in `/Library/ANV15-52/backup-<date>`. The rollback does not delet
 
 Note the last visible line, or take a photo: with `-v` in the boot-args you see where it stops.
 
-**NullMoth's guard:** after two boots in a row with no screen lit, the driver turns itself off and macOS starts on the firmware's framebuffer.
+**NullMoth's guard:** after two boots in a row with no screen lit, the driver turns itself off and macOS starts on the firmware's framebuffer. It counts in NVRAM, so with the emulated NVRAM of the `full` profile it never trips: use `-nvoff` ([NVRAM](../README.md#nvram)).
 
 **A previous EFI:** `efi/build_efi.py deploy` saves the folder it replaces in `private/efi-backups/`. Copy it back on the stick. **Tried** many times, with earlier scripts.
 

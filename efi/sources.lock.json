@@ -160,6 +160,14 @@
    "path": "X64/EFI/OC/OpenCore.efi",
    "sha256": "8018bab3b2bd7ef3259c827fb0df98d31c65e78a3e5532e0bab8335dd38c5acd"
   },
+  "Drivers/OpenVariableRuntimeDxe.efi": {
+   "asset": "OpenCore-1.0.9",
+   "path": "X64/EFI/OC/Drivers/OpenVariableRuntimeDxe.efi",
+   "sha256": "0028d3b7244f20f4ba0ded666626c153ea5b20d425a60d39bdedb6e7dac87ecc",
+   "profiles": [
+    "full"
+   ]
+  },
   "Drivers/OpenRuntime.efi": {
    "asset": "OpenCore-1.0.9",
    "path": "X64/EFI/OC/Drivers/OpenRuntime.efi",
@@ -284,7 +292,7 @@
    },
    "SMCNvidiaGPU": {
     "compiled": true,
-    "tested_binary_sha16": "c250090d414abd5e"
+    "tested_binary_sha16": "859ad651b80caeee"
    },
    "USBToolBox": {
     "asset": "USBToolBox-1.2.0",

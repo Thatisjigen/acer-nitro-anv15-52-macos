@@ -169,6 +169,8 @@ def build(args):
     manifest = {'profile': args.profile, 'opencore': LOCK['opencore'], 'date': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'), 'files': {}}
 
     for rel, spec in LOCK['efi_files'].items():
+        if args.profile not in spec.get('profiles', PROFILES):
+            continue
         archive = fetch(spec['asset'])
         target = oc / rel
         if spec['path']:

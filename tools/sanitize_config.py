@@ -66,6 +66,7 @@ COMMENTS = {
     'preserve firmware MMIO 0xFF000000 containing panic CR2 0xFF09804C; hardware test pending': 'Keep the firmware MMIO at 0xFF000000: without it, a page fault at boot',
     'remove one duplicate 101-byte Acer AEVD SSDT; preserve the other original': 'Remove one of the two 101-byte Acer AEVD SSDTs; the other stays',
     'VoodooI2C waits for VoodooGPIO without a limit, not 1 s': 'VoodooI2C waits for VoodooGPIO without a limit instead of 1 s, or the trackpad can stay absent',
+    'NVRAM emulata in memoria (Configuration.pdf 11.11)': 'NVRAM emulated in memory: nothing reaches the firmware flash. Loaded early, before OpenRuntime (Configuration.pdf 11.11)',
 }
 REFERENCE = re.compile(r'\b[A-Z]+-\d{3}\b(?: fallback)?')
 # Left out: -nmappfreedbg, a log line for each app NMAppFree exempts; -liludbg and liludump=90, Lilu's debugging log.

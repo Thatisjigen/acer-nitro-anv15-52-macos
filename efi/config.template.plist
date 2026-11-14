@@ -1731,11 +1731,25 @@
 				<key>Arguments</key>
 				<string></string>
 				<key>Comment</key>
+				<string>NVRAM emulated in memory: nothing reaches the firmware flash. Loaded early, before OpenRuntime (Configuration.pdf 11.11)</string>
+				<key>Enabled</key>
+				<true/>
+				<key>HideVerbose</key>
+				<false/>
+				<key>LoadEarly</key>
+				<true/>
+				<key>Path</key>
+				<string>OpenVariableRuntimeDxe.efi</string>
+			</dict>
+			<dict>
+				<key>Arguments</key>
+				<string></string>
+				<key>Comment</key>
 				<string></string>
 				<key>Enabled</key>
 				<true/>
 				<key>LoadEarly</key>
-				<false/>
+				<true/>
 				<key>Path</key>
 				<string>OpenRuntime.efi</string>
 				<key>HideVerbose</key>

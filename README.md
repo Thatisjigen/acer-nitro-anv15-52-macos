@@ -27,12 +27,12 @@ OpenCore EFI and post-install scripts for the Acer Nitro ANV15-52: macOS Tahoe w
 | Iris Xe and RTX 5050 acceleration | ✅ | Metal 2 and Metal 3, together |
 | Internal panel | ✅ | 180 Hz, brightness |
 | HiDPI | ✅ | On the panel, up to "looks like" 1600×900 |
-| HDMI | ✅ | Up to 1080p at 144 Hz, 4K at 30 Hz. A monitor plugged in after a boot without one lights up |
+| HDMI | ✅ | Up to 1080p at 144 Hz, and 4K at 60 Hz. A monitor plugged in after a boot without one lights up |
 | USB-C video and hot plug | ✅ | One display, on the Iris Xe |
 | Three displays | ✅ | Panel, USB-C, HDMI |
-| HDR | ✅ | Over USB-C, and HDR10 over HDMI on the RTX, also at 120 Hz |
+| HDR | ✅ | Over USB-C, and HDR10 over HDMI on the RTX: 1080p up to 144 Hz, and 4K at 60 Hz in YCbCr 4:2:2 when RGB at 10 bits is beyond the monitor's HDMI clock |
 | Monitor control over DDC/CI | ✅ | A monitor on the RTX's HDMI: its brightness is read. Setting it from an app was not tried |
-| Sleep and wake | ✅ | With the RTX on |
+| Sleep and wake | ✅ | With the RTX on. Tested with the real NVRAM, not yet with the [emulated NVRAM](#nvram) of the `full` profile |
 | Video decoding on the RTX | ✅ | H.264, VP9, AV1 in Chrome; H.264, HEVC, VP9 in Safari too, not AV1 ([Safari video](#safari-video-on-the-rtx)) |
 | Protected video, Firefox | ✅ | Widevine test streams up to 4K. Netflix not tried yet |
 | Protected video, Chrome | ✅ | Widevine, Netflix included, with [NMAppFree](#chrome-and-nmappfree) |
@@ -43,7 +43,7 @@ OpenCore EFI and post-install scripts for the Acer Nitro ANV15-52: macOS Tahoe w
 | DisplayPort audio over USB-C | ✅ | Also after a short sleep; volume and mute as for HDMI |
 | Keyboard, Fn keys, trackpad | ✅ | |
 | Webcam, USB | ✅ | |
-| Battery, charge limit, fans, sensors | ✅ | NitroSense app |
+| Battery, charge limit, fans, sensors | ✅ | NitroSense app, and the RTX's temperatures and load in the SMC, the load taken from NVAccel's own statistics. The menu bar item is redrawn only when its text changes, and the app polls every 10 s while its window and panel are closed: WindowServer's "Invalid window" log lines went from about 45 to under 10 every 30 s |
 | Ethernet | ✅ | The driver loads here, no cable test. Reported working on another PC with this chip |
 | Wi-Fi and Bluetooth, original MediaTek MT7920 | ✅ | Wi-Fi 6 (802.11ax), with the access point's BSS color |
 | Wi-Fi and Bluetooth with an Intel card instead | ✅ | Swap the kexts, see [efi/README.md](efi/README.md#kexts) |
@@ -117,11 +117,24 @@ The other modes are in [its README](https://github.com/Thatisjigen/NMAppFree#mod
 
 With `-wex-nv-video` in the boot-args, Safari's GPU process (`com.apple.WebKit.GPU`) decodes **H.264, HEVC and VP9** on the RTX, through the NVIDIA runtime's video decoders (`libnvencvt`) that a WhateverXe rule lets that process map. A 4K H.264 clip plays at about a fifth of the CPU a software decoder takes. AV1 stays off: 10-bit AV1 decodes wrong on this Blackwell GPU, so it is refused rather than shown wrong. Tested on YouTube up to 2160p.
 
+## NVRAM
+
+The `full` profile keeps NVRAM in memory, with OpenCore's `OpenVariableRuntimeDxe.efi` loaded early, before `OpenRuntime.efi`: nothing reaches the firmware's flash any more. OpenCore itself already wrote nothing there (`WriteFlash` is `false`); now what macOS and the kexts write stays in memory too. The `install` profile keeps the real NVRAM.
+
+What is lost at each restart:
+
+- **Panic reports.** The kernel writes a panic into NVRAM, now in memory, and the restart clears it: no report after the reboot.
+- **Variables macOS writes,** such as the volume of the startup sound and any `sudo nvram` change, and NullMoth's boot guard (`nullmoth-nv-starts`, `nullmoth-nv-ok`): failed starts are not counted across restarts, so the guard never turns the NVIDIA driver off. If the RTX stops the boot, use `-nvoff` ([docs/RECOVERY.md](docs/RECOVERY.md)).
+- **macOS updates** keep their state across restarts in NVRAM: update with the real NVRAM.
+
+For the real NVRAM, to catch a panic or to update: in `UEFI` › `Drivers` disable `OpenVariableRuntimeDxe.efi` and set `LoadEarly` of `OpenRuntime.efi` back to `false`. Sleep and wake have not been tried yet with the emulated NVRAM.
+
 ## Known issues
 
 - **Intel GPU resets:** in about one boot out of three the Intel blitter hangs and resets over and over, and everything slows down for some minutes. Cause unknown.
 - **A panic when the Intel GPU stops answering:** seen twice with WhateverXe 0.8.2, under a heavy build and with the Aerial screensaver: the DEBUG build stopped at its check of the command streamer's status buffer. The build pinned here re-arms that buffer instead, at most once a second; it has not been needed yet.
 - **Do not sleep with `-nvoff`:** the one try without the RTX ended in a watchdog panic.
+- **4K at 60 Hz over HDMI goes out at 59.94 Hz:** the driver takes the first variant of the monitor's mode. At 60 Hz the HiDPI desktop that looks like 1920×1080 uses a 1080p signal; 4K at 60 Hz is shown at its own size.
 - **A monitor on HDMI can look too dark:** macOS gives it gamma 1.961. Choose the profile `sRGB IEC61966-2.1` in System Settings › Displays.
 
 ## In this repository

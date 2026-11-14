@@ -17,7 +17,7 @@
    "url": "https://github.com/Thatisjigen/nvidia-macos-driver.git",
    "ref": "acer/current",
    "license": "PolyForm Noncommercial 1.0.0; translator LGPL-3.0",
-   "tested_commit": "81cf050fdb0abe181e13e7595e22c4528c05465d"
+   "tested_commit": "78aef54c688808a441da07ec61b9b6b903f6669b"
   },
   "WhateverXe": {
    "url": "https://github.com/Thatisjigen/WhateverXe.git",
@@ -35,13 +35,13 @@
    "url": "https://github.com/Thatisjigen/NitroSense-macOS.git",
    "ref": "acer/current",
    "license": "GPL-3.0",
-   "tested_commit": "bf862cfcc507a03781e472f5ca3dc60ff08fac89"
+   "tested_commit": "fc86003016762e3bacf8536b21f5f3825c875299"
   },
   "SMCNvidiaGPU": {
    "url": "https://github.com/Thatisjigen/SMCNvidiaGPU.git",
    "ref": "acer/current",
    "license": "MIT",
-   "tested_commit": "6d1027a8f3fb19938f285049f0c3b492f2063a97"
+   "tested_commit": "b54585f7217ed39b9682ce599c5be9950e81c311"
   },
   "LatSOF-Audio": {
    "url": "https://github.com/Thatisjigen/LatSOF-Audio.git",
@@ -308,7 +308,7 @@
    "sha256": "b9dbc698dade75edf0feb5fafe440790ee5a4320bb18649e65c60cba0ba79eb5"
   },
   "NVRMFB.kext/Contents/MacOS/NVRMFB": {
-   "sha256": "0f7391c26db83604197f90c1c151d2719764ce6113d10268ed95ed0300cb891d"
+   "sha256": "aaafbc364609ff1c24ae459d94f118594b54b7deca3dcbb8d65b85f610c90f6e"
   },
   "NVAccel.kext/Contents/MacOS/NVAccel": {
    "sha256": "6add0fe72acc2221451d9af28d1ffd80097098587266b851aa3d1d8ea4537f93"
@@ -351,12 +351,12 @@
    "reference_sha256": "432475ced926ca28b89337c7fb8dc4f2fa2cd8bdf5ab66ed91e1becfc0254d8d"
   },
   "nitrosense/NitroSense.app/Contents/MacOS/NitroSense": {
-   "sha256": "58beef21c3e8d71cba2cfe4a83d8dc2a6d51527cc551adcba04e7538fe37e248",
+   "sha256": "a925bf818cbe606922bc5d1ce6be91b8472406dbfb73814e9d01085dbc8166ca",
    "note": "same code; what runs still has the date of an EC dump in a help text",
-   "reference_sha256": "38ac6425db7018db28a4770b629e85ef66a0a71fee3a9b76b1235250219128d8"
+   "reference_sha256": "61f22c3ab0ce6f464b740b6c7e7e6da67fdf78c061c00f57011c58e58ab52781"
   },
   "SMCNvidiaGPU.kext/Contents/MacOS/SMCNvidiaGPU": {
-   "sha256": "c250090d414abd5e42e67ed27244de07dbe3bbdc5c4b809943cfef54108b4b35"
+   "sha256": "859ad651b80caeee55aa5d39a8cf22def0b2c0c63ff6b116a93f6a443edd1f4a"
   },
   "WhateverXe.kext/Contents/MacOS/WhateverXe": {
    "sha256": "e5db6e4704d65a5d123fe3d5e61454e6b51f6a910c7640feaadebf88f04d52e1",

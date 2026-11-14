@@ -90,6 +90,12 @@ Also present and disabled, because at boot they find nothing on this laptop: SMC
 
 On in the kexts themselves, each with a boot-arg that turns it off: the framebuffer, accelerator and four heads of the RTX; in WhateverXe the recovery from GPU hangs (`-wex-no-reset-recover`), coherent scanout and the larger display buffer that scaled modes need (`-wex-no-scanout-coherent`, `-wex-no-hidpi-dbuf`), the HDR switch for a monitor on USB-C (`-wex-no-hdr-modes`, `-wex-no-hdr-sgx`); HybridPM's turbo (`-nohpm`) and its autonomous clock (`hpmauto=0`); Wi-Fi 6 on the MT7920 (`-mtknohe`).
 
+## NVRAM of the `full` profile
+
+The `full` profile emulates NVRAM in memory, as the entry in use on the test machine: `UEFI` › `Drivers` loads `apfs_aligned.efi`, `HfsPlus.efi`, then `OpenVariableRuntimeDxe.efi` and `OpenRuntime.efi`, both with `LoadEarly`, as Configuration.pdf 11.11 asks, then `ResetNvramEntry.efi`. `OpenVariableRuntimeDxe.efi` comes from the same OpenCore 1.0.9 archive. `WriteFlash`, `LegacySchema`, `NVRAM` › `Add` and `Delete` and the boot-args are as before. Nothing macOS or the kexts write reaches the firmware's flash. OpenCore makes an empty `NVRAM` folder on the stick; nothing is saved there.
+
+Lost at each restart: panic reports, the variables macOS writes (the volume of the startup sound, `sudo nvram` changes) and the count of NullMoth's boot guard, which so never trips. macOS updates need the real NVRAM. How to go back to it, and what was not tried yet: [README](../README.md#nvram). The `install` profile keeps the real NVRAM and does not get this driver.
+
 ## Differences from the tested EFIs
 
 **`install` profile:** all 71 assembled files are identical to the ones that installed macOS on the test machine. The only difference in `config.plist` is the identity. `Tools/` and `Resources/` are absent, as the `Builtin` picker does not use them. It keeps the MacBookPro16,1 model of that install, with a serial generated for 16,2: on the test machine the move from 16,1 to 16,2 happened on a system already installed.
@@ -100,7 +106,7 @@ On in the kexts themselves, each with a boot-arg that turns it off: the framebuf
 - 15 keys an editor had dropped, put back with the value OpenCore 1.0.9 uses when they are absent, so that `ocvalidate` passes: same behaviour. Among them `FixupAppleEfiImages`, `false` because that is what its absence meant in the tests. `InitialMode` is `Auto`: an empty one is illegal for `ocvalidate`;
 - `-nmappfreedbg`, NMAppFree's log line for each app it exempts, left out;
 - `-liludbg liludump=90`, Lilu's debugging log, left out;
-- the comments.
+- the comments, the driver's in English.
 
 Among the binaries, everything downloaded matches the test machine byte for byte, except:
 
