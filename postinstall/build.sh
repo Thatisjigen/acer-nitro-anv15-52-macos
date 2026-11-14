@@ -148,15 +148,22 @@ stage_plugin() {   # NVMTLDriver: Objective-C against Mesa's Vulkan headers, wit
   say "NVMTLDriver $(sha "$OUT/bundle/NVMTLDriver")"
 }
 
-stage_translator() {   # libnvmtl_translate: Rust, toolchain and crates under $WORK, no shell profile touched. About 5 minutes the first time.
+rust_toolchain() {   # <version>: rustup and that toolchain under $DEPS/rust, minimal profile, no shell profile touched
   local R=$DEPS/rust
-  export RUSTUP_HOME=$R/rustup CARGO_HOME=$R/cargo RUSTUP_TOOLCHAIN=${RUST_VERSION:?}
-  if [ ! -x "$R/cargo/bin/cargo" ]; then
+  if [ ! -x "$R/cargo/bin/rustup" ]; then
     mkdir -p "$R/dl"
     ( cd "$R/dl" && curl -sSfO https://static.rust-lang.org/rustup/dist/x86_64-apple-darwin/rustup-init \
       && echo "$(curl -sSf https://static.rust-lang.org/rustup/dist/x86_64-apple-darwin/rustup-init.sha256 | cut -d' ' -f1)  rustup-init" | shasum -a 256 -c - \
-      && chmod +x rustup-init && ./rustup-init -y -q --no-modify-path --profile minimal --default-toolchain "$RUST_VERSION" ) || die "Rust toolchain"
+      && chmod +x rustup-init && RUSTUP_HOME=$R/rustup CARGO_HOME=$R/cargo ./rustup-init -y -q --no-modify-path --profile minimal --default-toolchain "$1" ) || die "Rust toolchain"
   fi
+  [ -x "$R/rustup/toolchains/$1-x86_64-apple-darwin/bin/rustc" ] || RUSTUP_HOME=$R/rustup CARGO_HOME=$R/cargo "$R/cargo/bin/rustup" toolchain install "$1" \
+    --profile minimal --no-self-update > "$LOGS/rust-$1.log" 2>&1 || die "Rust $1"
+}
+
+stage_translator() {   # libnvmtl_translate: Rust, toolchain and crates under $WORK, no shell profile touched. About 5 minutes the first time.
+  local R=$DEPS/rust
+  rust_toolchain "${RUST_VERSION:?}"
+  export RUSTUP_HOME=$R/rustup CARGO_HOME=$R/cargo RUSTUP_TOOLCHAIN=$RUST_VERSION
   export PATH=$CARGO_HOME/bin:$PATH
   # Always this folder: wrapper depends on the crate above it, outside its workspace, so cargo puts that absolute path into the hash in every symbol, and another folder gives another file
   local B=/private/tmp/anv15-52-translator
@@ -173,6 +180,210 @@ stage_translator() {   # libnvmtl_translate: Rust, toolchain and crates under $W
   rm -rf "$B"
   say "libnvmtl_translate $(sha "$D")"
 }
+
+# NVK, the Vulkan driver the Metal plugin runs on (libvulkan_nouveau.dylib), built from source as NullMoth builds it: the recipe of
+# the fork's build/build_nvk.sh for 3.0, with nvk-event-lazy.patch after nvk-620-kernel, and NullMoth's own toolchain, the only
+# one that gives their binary byte for byte: clang 22.1.8 with the libc++ 22.1.8 headers, Rust 1.97.1, glslang at one commit of
+# main. LLVM publishes no x86_64 macOS build of 22, so the first run compiles LLVM and clang: about 1 h 30 at 4 jobs. All of it
+# stays under $NV (about 3 GB once built, 7 GB at the peak) and is reused by the next builds, which take about 10 minutes.
+# .noindex: Spotlight does not index the trees. No path of the build ends up in the library.
+NV=$DEPS/nvk.noindex
+NVK_RUST=1.97.1; NVK_RUSTC=8bab26f4f68e0e26f0bb7960be334d5b520ea452   # the rustc named in the panic strings of NullMoth's NVK
+NVK_LLVM=22.1.8; NVK_MESA=90a959ebba9dbb36f2ea5176091c15d6ebdd0af0      # mesa-26.3.0-rc3, nvk/MESA_BASE
+NVK_GLSLANG=385445a87d21d7a5c7bee2f7bef8a87850f6bf28                    # main: its SPIR-V names buffer references bref-<type>, as the package's
+NVK_HDR_TOOLS=496543121ce6419f23d6fa5d7194ba66c36212d2                  # the SPIRV-Headers SPIRV-Tools v2026.4 names
+NVK_HDR_TRANS=575b6512579ebde466ed3dfc04e413439d14d95d                  # and the ones SPIRV-LLVM-Translator v22.1.7 names
+NVK_CHAIN="nvk-macos @FIXES nvk-620-kernel nvk-event-lazy nvk-recycle nvk-slab nvk-slabdef nvk-hubfix nvk-perf-boost-burst nvk-rated-tdp nvk-gps-maxpower nvk-metal-wsi nvk-card-select hwrt/ttu-nak hwrt/ttu-rq curves/curves hwrt/wide nvk-warnings nvk-unbound-stage nvk-diag-nofollow nvk-stream-uncached"
+
+nvk_unpack() {   # <archive in dl> <folder under $NV/src>: unpacked once
+  local to=$NV/src/$2
+  [ -d "$to" ] && return 0
+  [ -f "$WORK/dl/$1" ] || die "$WORK/dl/$1 is missing: run fetch"
+  rm -rf "$to.part"; mkdir -p "$to.part"; tar -xf "$WORK/dl/$1" -C "$to.part" && mv "$to.part" "$to" || die "cannot unpack $1"
+}
+nvk_cmake() {   # <name> <source> <prefix> [cmake arguments]: one tool of the toolchain, Release, with the cmake and ninja of the venv
+  local n=$1 s=$2 p=$3 b=$NV/build/$1; shift 3
+  rm -rf "$b"; mkdir -p "$b"; say "NVK toolchain: $n, log $LOGS/nvk-$n.log"
+  { cmake -S "$s" -B "$b" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$p" -DPython3_EXECUTABLE="$NV/py/bin/python3" "$@" \
+      && cmake --build "$b" --parallel "$JOBS" && cmake --install "$b"; } > "$LOGS/nvk-$n.log" 2>&1 \
+    || { grep -E -A3 'error:|FAILED|CMake Error' "$LOGS/nvk-$n.log" | head -20; die "NVK toolchain: $n"; }
+  rm -rf "$b"
+}
+nvk_jobs() {   # ninja and rustc's codegen threads share a GNU make jobserver of $JOBS tokens: ninja ignores one when given -j
+  local fifo=$NV/jobserver.fifo rc=0 i
+  rm -f "$fifo"; mkfifo "$fifo"; exec 9<>"$fifo"
+  for ((i = 1; i < JOBS; i++)); do printf '+' >&9; done
+  MAKEFLAGS="-j$JOBS --jobserver-auth=fifo:$fifo" "$@" || rc=$?
+  exec 9>&-; rm -f "$fifo"; return $rc
+}
+
+nvk_toolchain() {   # each tool is built once, and checked every time
+  mkdir -p "$NV/src" "$NV/build"
+  # Python 3.12 (Mesa 26.3 wants 3.10 or newer, macOS has 3.9) and the Python packages of the build, by hash
+  if [ ! -x "$NV/python/bin/python3" ]; then
+    nvk_unpack "cpython-3.12.16+20261026-x86_64-apple-darwin-install_only.tar.gz" python && mv "$NV/src/python/python" "$NV/python" && rmdir "$NV/src/python"
+  fi
+  if [ "$("$NV/py/bin/meson" --version 2>/dev/null)" != 1.12.1 ]; then
+    rm -rf "$NV/py"; "$NV/python/bin/python3" -m venv "$NV/py"
+    "$NV/py/bin/python" -m pip install --disable-pip-version-check --require-hashes --only-binary=:all: -r "$HERE/nvk-requirements.txt" > "$LOGS/nvk-python.log" 2>&1 \
+      || { tail -5 "$LOGS/nvk-python.log"; die "the Python packages of the NVK build"; }
+  fi
+  rust_toolchain "$NVK_RUST"
+  [ "$(rustc -vV | sed -n 's/^commit-hash: //p')" = "$NVK_RUSTC" ] || die "rustc is not $NVK_RUST"
+  # Mesa takes bindgen 0.71.1 or newer, except 0.72.0, 0.73.0 and 0.73.1; cbindgen 0.28 or newer. Their crates come from their Cargo.lock
+  if [ "$(bindgen --version 2>/dev/null)" != "bindgen 0.73.2" ] || [ "$(cbindgen --version 2>/dev/null)" != "cbindgen 0.29.4" ]; then
+    say "NVK toolchain: bindgen and cbindgen, log $LOGS/nvk-bindgen.log"
+    CARGO_BUILD_JOBS=$JOBS cargo install --locked --root "$NV/cargo" bindgen-cli@0.73.2 cbindgen@0.29.4 > "$LOGS/nvk-bindgen.log" 2>&1 || die "bindgen and cbindgen"
+  fi
+  if [ "$(cat "$NV/glslang/COMMIT" 2>/dev/null)" != "$NVK_GLSLANG" ]; then
+    nvk_unpack glslang-385445a8.tar.gz glslang
+    grep -q '"bref-"' "$NV/src/glslang/glslang-$NVK_GLSLANG/glslang/MachineIndependent/SymbolTable.cpp" || die "this glslang does not name buffer references"
+    nvk_cmake glslang "$NV/src/glslang/glslang-$NVK_GLSLANG" "$NV/glslang" -DENABLE_OPT=OFF -DGLSLANG_TESTS=OFF -DBUILD_SHARED_LIBS=OFF \
+      -DENABLE_GLSLANG_BINARIES=ON -DGLSLANG_ENABLE_INSTALL=ON
+    echo "$NVK_GLSLANG" > "$NV/glslang/COMMIT"
+  fi
+  if [ ! -f "$NV/spirv-tools/lib/pkgconfig/SPIRV-Tools.pc" ]; then
+    nvk_unpack SPIRV-Tools-v2026.4.tar.gz spirv-tools; nvk_unpack SPIRV-Headers-49654312.tar.gz spirv-headers-tools
+    grep -q "$NVK_HDR_TOOLS" "$NV/src/spirv-tools/SPIRV-Tools-2026.4/DEPS" || die "SPIRV-Tools wants other SPIRV-Headers"
+    nvk_cmake spirv-tools "$NV/src/spirv-tools/SPIRV-Tools-2026.4" "$NV/spirv-tools" -DSPIRV_SKIP_TESTS=ON -DSPIRV_WERROR=OFF -DBUILD_SHARED_LIBS=OFF \
+      -DSPIRV-Headers_SOURCE_DIR="$NV/src/spirv-headers-tools/SPIRV-Headers-$NVK_HDR_TOOLS"
+  fi
+  # LLVM and clang only, X86 only (mesa_clc initializes every target it has), shared libLLVM, RTTI on, as in Homebrew's
+  if [ "$("$NV/llvm/bin/llvm-config" --version 2>/dev/null)" != "$NVK_LLVM" ]; then
+    nvk_unpack llvm-project-22.1.8.src.tar.xz llvm
+    nvk_cmake llvm "$NV/src/llvm/llvm-project-22.1.8.src/llvm" "$NV/llvm" \
+      -DLLVM_ENABLE_PROJECTS=clang -DLLVM_TARGETS_TO_BUILD=X86 -DLLVM_BUILD_LLVM_DYLIB=ON -DLLVM_LINK_LLVM_DYLIB=ON -DCLANG_LINK_CLANG_DYLIB=ON \
+      -DLLVM_ENABLE_RTTI=ON -DLLVM_ENABLE_ASSERTIONS=OFF -DLLVM_ENABLE_ZLIB=OFF -DLLVM_ENABLE_ZSTD=OFF -DLLVM_ENABLE_LIBXML2=OFF -DLLVM_ENABLE_LIBEDIT=OFF \
+      -DLLVM_ENABLE_LIBPFM=OFF -DLLVM_ENABLE_Z3_SOLVER=OFF -DLLVM_ENABLE_CURL=OFF -DLLVM_ENABLE_HTTPLIB=OFF -DLLVM_ENABLE_BINDINGS=OFF \
+      -DLLVM_INCLUDE_TESTS=OFF -DLLVM_INCLUDE_BENCHMARKS=OFF -DLLVM_INCLUDE_EXAMPLES=OFF -DLLVM_INCLUDE_DOCS=OFF \
+      -DCLANG_INCLUDE_TESTS=OFF -DCLANG_INCLUDE_DOCS=OFF -DCLANG_ENABLE_ARCMT=OFF -DCLANG_ENABLE_STATIC_ANALYZER=OFF -DLLVM_PARALLEL_LINK_JOBS=1
+  fi
+  # The package's C++ symbols carry libc++'s ABI tag nqe220108: the headers of libc++ 22.1.8 beside clang, not the SDK's (nqe210106).
+  # Headers only: the library still links the system's /usr/lib/libc++.1.dylib
+  if [ ! -f "$NV/llvm/include/c++/v1/__config_site" ]; then
+    nvk_unpack llvm-project-22.1.8.src.tar.xz llvm
+    rm -rf "$NV/build/libcxx"; say "NVK toolchain: libc++ headers, log $LOGS/nvk-libcxx.log"
+    { cmake -S "$NV/src/llvm/llvm-project-22.1.8.src/runtimes" -B "$NV/build/libcxx" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$NV/llvm" \
+        -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi" -DCMAKE_C_COMPILER="$NV/llvm/bin/clang" -DCMAKE_CXX_COMPILER="$NV/llvm/bin/clang++" \
+        -DLIBCXXABI_USE_LLVM_UNWINDER=OFF -DLIBCXX_INCLUDE_TESTS=OFF -DLIBCXX_INCLUDE_BENCHMARKS=OFF -DLIBCXXABI_INCLUDE_TESTS=OFF \
+        -DLLVM_INCLUDE_TESTS=OFF -DLLVM_INCLUDE_DOCS=OFF -DPython3_EXECUTABLE="$NV/py/bin/python3" \
+      && ninja -C "$NV/build/libcxx" -j"$JOBS" install-cxx-headers install-cxxabi-headers; } > "$LOGS/nvk-libcxx.log" 2>&1 || die "libc++ headers"
+    rm -rf "$NV/build/libcxx"
+  fi
+  local t; t=$(mktemp -d)
+  printf '#include <unordered_map>\nint f(int k) { std::unordered_map<int, int> m; m[k] = 1; return (int)m.size(); }\n' > "$t/t.cpp"
+  "$NV/llvm/bin/clang++" -arch x86_64 -mmacosx-version-min=15.0 -O2 -std=c++17 -c "$t/t.cpp" -o "$t/t.o" || die "clang $NVK_LLVM cannot compile C++"
+  [ "$(nm "$t/t.o" | grep -o 'B9[a-z]*[0-9]*' | sort -u | tr -d '\n')" = B9nqe220108 ] || die "the libc++ headers beside clang are not 22.1.8"
+  rm -r "$t"
+  if [ ! -f "$NV/spirv-llvm-translator/lib/pkgconfig/LLVMSPIRVLib.pc" ]; then
+    nvk_unpack SPIRV-LLVM-Translator-v22.1.7.tar.gz spirv-llvm-translator; nvk_unpack SPIRV-Headers-575b6512.tar.gz spirv-headers-translator
+    grep -q "$NVK_HDR_TRANS" "$NV/src/spirv-llvm-translator/SPIRV-LLVM-Translator-22.1.7/spirv-headers-tag.conf" || die "the translator wants other SPIRV-Headers"
+    nvk_cmake spirv-llvm-translator "$NV/src/spirv-llvm-translator/SPIRV-LLVM-Translator-22.1.7" "$NV/spirv-llvm-translator" \
+      -DLLVM_DIR="$NV/llvm/lib/cmake/llvm" -DLLVM_EXTERNAL_SPIRV_HEADERS_SOURCE_DIR="$NV/src/spirv-headers-translator/SPIRV-Headers-$NVK_HDR_TRANS" \
+      -DLLVM_SPIRV_INCLUDE_TESTS=OFF -DBUILD_SHARED_LIBS=OFF
+  fi
+  rm -rf "$NV/src/llvm" "$NV/build"   # 2.3 GB of LLVM sources: unpacked again only if LLVM or its headers have to be built again
+}
+
+stage_nvk() { (   # in a subshell: the toolchain of NVK stays out of the stages after it
+  export RUSTUP_HOME=$DEPS/rust/rustup CARGO_HOME=$NV/cargo-home RUSTUP_TOOLCHAIN=$NVK_RUST LIBCLANG_PATH=$NV/llvm/lib
+  export PATH=$DEPS/rust/rustup/toolchains/$NVK_RUST-x86_64-apple-darwin/bin:$NV/py/bin:$NV/cargo/bin:$NV/glslang/bin:/usr/bin:/bin:/usr/sbin:/sbin
+  unset PKG_CONFIG_PATH PKG_CONFIG_LIBDIR CC CXX OBJC CFLAGS CXXFLAGS LDFLAGS RUSTFLAGS
+  nvk_toolchain
+  for t in meson ninja pkg-config glslangValidator bindgen cbindgen rustc python3; do command -v $t > /dev/null || die "NVK: no $t"; done
+  local O=$OBJ/nvk.noindex P S B H X f p o w
+  rm -rf "$O"; mkdir -p "$O" "$OUT/nvmtl"
+  export_tree "$NM" "$O/series" nvk build/build_nvk.sh build/gen_nvk_rust_crates.py licenses/nvk-rust-crates.txt
+  P=$O/series/nvk
+  [ "$(cat "$P/MESA_BASE")" = "${NVK_MESA:0:8}" ] || die "nvk/MESA_BASE is not ${NVK_MESA:0:8}"
+  grep -q 'nvk-diag-nofollow nvk-stream-uncached" ;;' "$O/series/build/build_nvk.sh" || die "build_nvk.sh has another 3.0 chain: this stage follows the one it knew"
+  # Mesa as git archive gives it: no .git, so no git sha in the binary
+  S=$O/mesa; mkdir -p "$S"; tar -xzf "$WORK/dl/mesa-$NVK_MESA.tar.gz" -C "$S" --strip-components 1
+  [ "$(cat "$S/VERSION")" = 26.3.0-rc3 ] && [ ! -e "$S/.git" ] || die "not the Mesa tree of nvk/MESA_BASE"
+  # the headers of the 610 open kernel modules, with the 620 change of nvos.h
+  mkdir -p "$O/ogkm"; tar -xzf "$WORK/dl/open-gpu-kernel-modules-610.57.04-e4a5faa2.tar.gz" -C "$O/ogkm" --strip-components 1
+  grep -q 'NVIDIA_VERSION = 610.57.04' "$O/ogkm/version.mk" || die "open-gpu-kernel-modules is not 610.57.04"
+  patch -p1 -s --no-backup-if-mismatch -d "$O/ogkm" < "$P/ogkm-nvos-620.patch" && patch -p1 -s --no-backup-if-mismatch -d "$O/ogkm" < "$P/ogkm-warnings.patch" || die "ogkm patches"
+  # NullMoth's chain for 3.0, and nvk-event-lazy after nvk-620-kernel, on whose tree it was made: none needs fuzz
+  : > "$LOGS/nvk-patches.log"
+  for p in $NVK_CHAIN; do
+    f=$P/$p.patch; [ "$p" = @FIXES ] && f=$P/nvk-fixes-after-def16.patch
+    o=$(patch -p1 --verbose --no-backup-if-mismatch -F0 -d "$S" < "$f" 2>&1) || { echo "$o" | tail -5; die "$f does not apply"; }
+    echo "$o" >> "$LOGS/nvk-patches.log"; ! grep -q -i fuzz <<< "$o" || die "$f applies only with fuzz"
+  done
+  cp "$P/hwrt/nvk_hwrt.h" "$P/hwrt/nvk_hwrt_layout.h" "$P/curves/nvk_curve.h" "$S/src/nouveau/vulkan/"
+  cp "$P/hwrt/encode_wide.comp" "$P/hwrt/encode_wide_body.h" "$S/src/nouveau/vulkan/bvh/"
+  cp "$P/curves/curve_math.h" "$S/src/nouveau/vulkan/nvk_curve_math.h"
+  sed 's/#include "curve_math.h"/#include "nvk_curve_math.h"/' "$P/curves/curve_nir.h" > "$S/src/nouveau/vulkan/nvk_curve_nir.h"
+  ln -s "$O/ogkm" "$S/src/nouveau/vulkan/nvkmd/nvrm/open-gpu-kernel-modules"
+  python3 -I "$P/dlss/patch_dlss_cache.py" "$S" > /dev/null || die "patch_dlss_cache.py"
+  [ -z "$(find "$S" -name '*.orig' -o -name '*.rej')" ] || die "patch left .orig or .rej files"
+  # mesa_clc and vtn_bindgen2 precompile NVK's internal CL shaders: from this same tree, built by Apple's clang (meson's cc for native
+  # builds) against LLVM 22.1.8 and its translator
+  say "NVK: mesa_clc, log $LOGS/nvk-clc.log"
+  printf "[binaries]\nllvm-config = '%s'\n" "$NV/llvm/bin/llvm-config" > "$O/clc-native.ini"
+  H=$O/host; mkdir -p "$H/bin"
+  { PKG_CONFIG_PATH=$NV/spirv-llvm-translator/lib/pkgconfig:$NV/spirv-tools/lib/pkgconfig meson setup "$O/clc-native" "$S" --native-file "$O/clc-native.ini" \
+      -Dbuildtype=release -Dprefix="$H" -Dllvm=enabled -Dmesa-clc=enabled -Dinstall-mesa-clc=true -Dvulkan-drivers= -Dgallium-drivers= -Dplatforms= \
+      -Degl=disabled -Dgbm=disabled -Dgles1=disabled -Dgles2=disabled -Dglx=disabled -Dopengl=false \
+    && nvk_jobs ninja -C "$O/clc-native" src/compiler/clc/mesa_clc src/compiler/spirv/vtn_bindgen2; } > "$LOGS/nvk-clc.log" 2>&1 \
+    || { grep -E -A3 'error:|FAILED|ERROR' "$LOGS/nvk-clc.log" | head -20; die "mesa_clc"; }
+  cp "$O/clc-native/src/compiler/clc/mesa_clc" "$O/clc-native/src/compiler/spirv/vtn_bindgen2" "$H/bin/"
+  export PATH=$H/bin:$NV/llvm/bin:$PATH
+  [ "$(command -v clang)" = "$NV/llvm/bin/clang" ] || die "clang on PATH is not LLVM $NVK_LLVM"
+  X=$O/x86_64-nvk.ini
+  cat > "$X" <<EOT
+[binaries]
+c = ['clang', '-arch', 'x86_64', '-mmacosx-version-min=15.0']
+cpp = ['clang++', '-arch', 'x86_64', '-mmacosx-version-min=15.0']
+objc = ['clang', '-arch', 'x86_64', '-mmacosx-version-min=15.0']
+rust = ['rustc', '--target', 'x86_64-apple-darwin']
+ar = 'ar'
+strip = 'strip'
+pkg-config = 'pkg-config'
+[host_machine]
+system = 'darwin'
+cpu_family = 'x86_64'
+cpu = 'x86_64'
+endian = 'little'
+[properties]
+pkg_config_libdir = '/lib/pkgconfig'
+bindgen_clang_arguments = ['--target=x86_64-apple-darwin', '-mmacosx-version-min=15.0']
+EOT
+  # The Rust crates of NAK: meson fetches them by the hashes of Mesa's .wrap files; a copy kept beside the toolchain serves the next builds
+  mkdir -p "$NV/packagecache" "$S/subprojects/packagecache"; cp "$NV"/packagecache/* "$S/subprojects/packagecache/" 2> /dev/null || true
+  # The build folder inside the tree, as in build_nvk.sh: Rust and some C paths are recorded relative to it. -oso_prefix keeps the
+  # paths of the objects, which the linker hashes into LC_UUID, relative to it too
+  B=$S/build
+  say "NVK: meson and ninja, logs $LOGS/nvk-setup.log and $LOGS/nvk.log; about 10 minutes"
+  meson setup "$B" "$S" --cross-file="$X" -Dbuildtype=release -Db_ndebug=true -Dvulkan-drivers=nouveau -Dgallium-drivers= -Dplatforms=macos \
+    -Degl=disabled -Dglx=disabled -Dglvnd=disabled -Dllvm=disabled -Dmesa-clc=system -Dshared-glapi=disabled \
+    -Dvulkan-layers= -Dtools= -Dbuild-tests=false -Dexpat=disabled -Dzstd=disabled -Dlibunwind=disabled \
+    -Dlmsensors=disabled -Dvalgrind=disabled -Dxlib-lease=disabled -Dgallium-rusticl=false -Dspirv-tools=disabled \
+    "-Dc_args=-ffile-prefix-map=$S=/src -ffile-prefix-map=$HOME=/build" "-Dcpp_args=-ffile-prefix-map=$S=/src -ffile-prefix-map=$HOME=/build" \
+    "-Drust_args=--remap-path-prefix=$S=/src --remap-path-prefix=$HOME=/build" \
+    "-Dc_link_args=-Wl,-oso_prefix,$B -Wl,-no_warn_duplicate_libraries" "-Dcpp_link_args=-Wl,-oso_prefix,$B -Wl,-no_warn_duplicate_libraries" \
+    > "$LOGS/nvk-setup.log" 2>&1 || { tail -20 "$LOGS/nvk-setup.log"; die "NVK: meson setup"; }
+  cp "$S"/subprojects/packagecache/* "$NV/packagecache/"
+  nvk_jobs ninja -C "$B" src/nouveau/vulkan/libvulkan_nouveau.dylib > "$LOGS/nvk.log" 2>&1 \
+    || { grep -E -A3 'error(\[E[0-9]+\])?:|^FAILED' "$LOGS/nvk.log" | head -30; die "NVK"; }
+  w=$(grep -c 'warning:' "$LOGS/nvk.log" || true)
+  [ "$w" -le "$(cat "$P/WARNINGS" 2> /dev/null || echo 0)" ] || { grep 'warning:' "$LOGS/nvk.log" | head; die "NVK: $w warnings, more than nvk/WARNINGS allows"; }
+  python3 -I "$O/series/build/gen_nvk_rust_crates.py" "$S/subprojects/packagecache" "$O/nvk-rust-crates.txt"
+  cmp -s "$O/nvk-rust-crates.txt" "$O/series/licenses/nvk-rust-crates.txt" || die "NVK: the Rust crates are not the set whose licences the fork lists"
+  f=$B/src/nouveau/vulkan/libvulkan_nouveau.dylib
+  o=$(nm -m "$f" | grep '(undefined)' | grep -v weak | grep 'dynamically looked up' || true)
+  [ -z "$o" ] || { echo "$o" | head; die "NVK: unresolved strong references, WindowServer would not load it"; }
+  cp "$f" "$O/libvulkan_nouveau.dylib"; strip -S "$O/libvulkan_nouveau.dylib"
+  # then without its 2964 flat weak binds, which dyld searches in vain in every process that opens Metal, and signed ad hoc under the
+  # identifier the linker gives it, as NullMoth's package is
+  python3 -I "$HERE/drop_flat_weak_binds.py" "$O/libvulkan_nouveau.dylib" "$OUT/nvmtl/libvulkan_nouveau.dylib" > "$LOGS/nvk-binds.log" || die "NVK: the weak binds"
+  p=libvulkan_nouveau-55554944$(otool -l "$O/libvulkan_nouveau.dylib" | awk '/ uuid /{print $2; exit}' | tr -d - | tr A-F a-f)
+  codesign -f -s - --identifier "$p" "$OUT/nvmtl/libvulkan_nouveau.dylib" 2> /dev/null && codesign -v "$OUT/nvmtl/libvulkan_nouveau.dylib" || die "NVK signature"
+  chmod 755 "$OUT/nvmtl/libvulkan_nouveau.dylib"
+  rm -rf "$S/build" "$O/clc-native"
+  say "NVK $(sha "$OUT/nvmtl/libvulkan_nouveau.dylib"), $(cat "$LOGS/nvk-binds.log")"
+) }
 
 stage_nvenc() {   # libnvencvt: the decoders for H.264, HEVC, VP9 and AV1 on the RTX 5050, with the frames untiled on the Iris Xe
   local F=$SRC/nvenc K=$DEPS/open-gpu-kernel-modules-610 D=$DEPS/open-gpu-doc S=$DEPS/webkit-spi W=$OBJ/nvenc
@@ -193,23 +404,6 @@ stage_nvenc() {   # libnvencvt: the decoders for H.264, HEVC, VP9 and AV1 on the
     || { grep 'error:' "$LOGS/nvenc.log" | head; die "nvenc link"; }
   codesign -f -s - "$OUT/bundle/libnvencvt.dylib" 2> /dev/null
   say "libnvencvt $(sha "$OUT/bundle/libnvencvt.dylib")"
-}
-
-stage_ngshim() {   # umeow0716's bridge for the Intel Metal driver, with the flags of its NGShim/build.sh. layoutcheck.m runs its guards on this macOS
-  local W=$OBJ/ngshim N=$OBJ/ngshim/impostor.dylib; rm -rf "$W"; mkdir -p "$W" "$OUT/bundle"
-  # with the fixes of JulioNectar beside it: xefix.m without ARC, ngshim.m with ARC
-  { xcrun clang -arch x86_64 -c -fno-objc-arc -O2 -mmacosx-version-min=14.0 -o "$W/xefix.o" "$HERE/xefix/xefix.m" \
-    && xcrun clang -arch x86_64 -c -fobjc-arc -O2 -Wall -mmacosx-version-min=14.0 -o "$W/ngshim.o" "$DEPS/ngshim/ngshim.m" \
-    && xcrun clang -arch x86_64 -dynamiclib -mmacosx-version-min=14.0 -install_name @loader_path/impostor.dylib -framework Foundation -framework Metal -o "$N" "$W/ngshim.o" "$W/xefix.o"; } \
-    > "$LOGS/ngshim.log" 2>&1 || { grep 'error:' "$LOGS/ngshim.log" | head; die "NGShim"; }
-  codesign -f -s - -i impostor "$N" && codesign -v "$N" || die "NGShim signature"
-  ! otool -L "$N" | grep -q descriptor.dylib || die "NGShim should not need descriptor.dylib"
-  [ "$(otool -D "$N" | tail -1)" = "@loader_path/impostor.dylib" ] || die "NGShim install name"
-  ! nm -g "$N" | grep -v ' U ' | grep -v -E '_OBJC_(CLASS|METACLASS|IVAR)_\$_Xe' | grep -q . || die "NGShim should export only the classes of xefix.m"
-  xcrun clang -arch x86_64 -fobjc-arc -framework Foundation -framework Metal -o "$W/layoutcheck" "$HERE/layoutcheck.m" >> "$LOGS/ngshim.log" 2>&1 || die "layoutcheck"
-  "$W/layoutcheck" >> "$LOGS/ngshim.log" 2>&1 || { tail -8 "$LOGS/ngshim.log"; die "NGShim's guards would not all pass on this macOS"; }
-  cp "$N" "$OUT/bundle/impostor.dylib"
-  say "NGShim $(sha "$OUT/bundle/impostor.dylib")"
 }
 
 stage_latsof() {   # internal microphone. The firmware is embedded at link time and is downloaded, never in a repository
@@ -318,7 +512,10 @@ stage_mtkwlan() {   # the original MT7920 Wi-Fi card: AirportMtkWlan, Debug as t
   export_tree "$SRC/SimpleMtkWlan" "$F"; rm -rf "${F:?}/MacKernelSDK"; cp -R "$(mksdk)" "$F/MacKernelSDK"
   # the firmware comes from linux-firmware, downloaded with its hash by fetch: MediaTek's licence keeps it out of Git and out of this repository
   python3 -I "$F/tools/gen-mt7920-fw.py" --from "$DEPS/mt7920" > "$LOGS/mtkwlan.log" 2>&1 || { tail -5 "$LOGS/mtkwlan.log"; die "MT7920 firmware"; }
-  local COMMIT VERSION HDR KMOD SOURCES=() INCS FLAGS OBJECTS=() f o d
+  local COMMIT VERSION HDR KMOD SOURCES=() INCS FLAGS OBJECTS=() f o d AWDL=AirportMtkWlan/awdl/MtkAwdlInterface.cpp AWDL_DEFINE=()
+  # AWDL, for AirDrop: one more file, compiled on its own with its own layouts of Apple's classes, and the define that builds the rest of
+  # it into the driver. It stays off unless -mtkawdl is in the boot-args
+  [ -f "$F/$AWDL" ] && AWDL_DEFINE=(-DMTK_AWDL)
   COMMIT=${MTK_GIT_COMMIT:-$(git -C "$SRC/SimpleMtkWlan" rev-parse --short=7 HEAD)}
   VERSION=$(sed -n 's/.*MODULE_VERSION = \([0-9.]*\);.*/\1/p' "$F/SimpleMtkWlan.xcodeproj/project.pbxproj" | head -1)
   HDR=$F/MacKernelSDK/Headers; KMOD=$F/MacKernelSDK/Library/x86_64/libkmod.a
@@ -333,7 +530,7 @@ stage_mtkwlan() {   # the original MT7920 Wi-Fi card: AirportMtkWlan, Debug as t
   INCS+=(-I "$F/AirportMtkWlan")
   FLAGS=(-target x86_64-apple-macos10.12 -x c++ -std=gnu++14 -mkernel -fapple-kext -fno-rtti -fno-exceptions -fno-builtin -fno-common -nostdlib
     -fno-use-cxa-atexit -fno-asynchronous-unwind-tables -DKERNEL -DIEEE80211_STA_ONLY -D__PRIVATE_SPI__
-    -DAIRPORT -DAIRPORT_WCL -D__IO80211_TARGET=__MAC_26_0 -DIO80211FAMILY_V2
+    -DAIRPORT -DAIRPORT_WCL -D__IO80211_TARGET=__MAC_26_0 -DIO80211FAMILY_V2 ${AWDL_DEFINE[@]+"${AWDL_DEFINE[@]}"}
     "-DSMTW_VERSION=\"$VERSION\"" "-DGIT_COMMIT=\"$COMMIT\"" "-DITLWM_VERSION=\"$VERSION\"" -include "$F/SimpleMtkWlan/PrivateSPI.pch"
     -Wno-deprecated-register -Wno-everything -Werror=return-type -O0 -DDEBUG=1)
   rm -rf "${O:?}"; mkdir -p "$O/obj" "$O/$NAME.kext/Contents/MacOS"; : > "$LOGS/mtkwlan.log"
@@ -341,6 +538,12 @@ stage_mtkwlan() {   # the original MT7920 Wi-Fi card: AirportMtkWlan, Debug as t
     o=$O/obj/$(echo "$f" | tr '/' '_').o; OBJECTS+=("$o")
     "$CXX" "${FLAGS[@]}" "${INCS[@]}" -c "$F/$f" -o "$o" >> "$LOGS/mtkwlan.log" 2>&1 || { tail -20 "$LOGS/mtkwlan.log"; die "AirportMtkWlan: $f"; }
   done
+  if [ -f "$F/$AWDL" ]; then
+    o=$O/obj/MtkAwdlInterface.o; OBJECTS+=("$o")
+    "$CXX" -target x86_64-apple-macos10.12 -x c++ -std=c++17 -mkernel -fapple-kext -fno-rtti -fno-exceptions -fno-builtin -fno-common -nostdlib \
+      -fno-use-cxa-atexit -fno-asynchronous-unwind-tables -DKERNEL -O0 -DDEBUG=1 -I "$HDR" -Wno-everything -Werror=return-type \
+      -c "$F/$AWDL" -o "$o" >> "$LOGS/mtkwlan.log" 2>&1 || { tail -20 "$LOGS/mtkwlan.log"; die "AirportMtkWlan: $AWDL"; }
+  fi
   cat > "$O/obj/kmod_info.c" <<KMOD
 #include <mach/kmod.h>
 extern kern_return_t _start(kmod_info_t *, void *);
@@ -402,6 +605,39 @@ KMOD
   say "SimpleMtkBtPatcher $(sha "$OUT/$NAME.kext/Contents/MacOS/$NAME")"
 }
 
+stage_btleadv() {   # BTLEAdvFixup of ForbiddenItlwm: Bluetooth LE advertising, so AirDrop finds this Mac, on with -mtkawdl as AWDL is. A Lilu plugin
+  # injected by OpenCore; the flags of the fork's tools/build_btleadv.py, with the Lilu and MacKernelSDK above. Its objects carry debug
+  # information, whose paths and times the linker hashes into the UUID: relative paths and no times, so every build gives the same file
+  local W=$OBJ/btleadv/src O=$OBJ/btleadv/out NAME=BTLEAdvFixup VERSION=0.9.0 IDENT=org.forbiddenitlwm.BTLEAdvFixup K FLAGS EXE
+  export_tree "$SRC/ForbiddenItlwm" "$W" BTLEAdvFixup; K=$(mksdk)
+  rm -rf "$O"; mkdir -p "$O/obj" "$O/$NAME.kext/Contents/MacOS"; EXE=$O/$NAME.kext/Contents/MacOS/$NAME
+  FLAGS=(-arch x86_64 -std=c++17 -O2 -g -fapple-kext -fno-exceptions -fno-rtti -fno-stack-protector -fno-builtin
+    -fno-asynchronous-unwind-tables -mno-red-zone -nostdinc -DKERNEL -DKERNEL_PRIVATE -D__APPLE__ -D__MACH__
+    -I"$K/Headers" -I"$LILU_SDK" -I"$W/BTLEAdvFixup" -mmacosx-version-min=10.6 -DAPPLE_KEXT_ASSERTIONS=1
+    -DDRIVER_PRIVATE -DAPPLE -DNeXT -fno-common -fasm-blocks -mmmx -msse -msse2 -msse3 -mssse3 -mfpmath=sse
+    -ftree-vectorize -fno-non-call-exceptions -Wall -Wextra -Wno-unused-parameter -Wno-deprecated-declarations
+    -Wno-vla -Wno-ossharedptr-misuse -fdebug-compilation-dir=. -ffile-prefix-map="$W"=/ForbiddenItlwm
+    -ffile-prefix-map="$K"=/MacKernelSDK -ffile-prefix-map="$LILU_SDK"=/Lilu -DPRODUCT_NAME=$NAME -DMODULE_VERSION=$VERSION)
+  { "$CXX" "${FLAGS[@]}" -c "$W/BTLEAdvFixup/kern_start.cpp" -o "$O/obj/kern_start.o" &&
+    "$CXX" "${FLAGS[@]}" -c "$LILU_SDK/Library/plugin_start.cpp" -o "$O/obj/plugin_start.o" &&
+    ZERO_AR_DATE=1 "$(xcrun -f ld)" -arch x86_64 -kext -undefined dynamic_lookup -no_fixup_chains -macos_version_min 10.6 -oso_prefix "$O/" -o "$EXE" \
+      "$O/obj/kern_start.o" "$O/obj/plugin_start.o" "$K/Library/x86_64/libkmod.a" && strip -S "$EXE"; } > "$LOGS/btleadv.log" 2>&1 \
+    || { tail -20 "$LOGS/btleadv.log"; die "BTLEAdvFixup"; }
+  python3 -I - "$O/$NAME.kext/Contents/Info.plist" "$NAME" "$VERSION" "$IDENT" <<'PY'
+import plistlib, sys
+path, name, ver, ident = sys.argv[1:5]
+libs = {x: '10.0.0' for x in ['com.apple.kpi.bsd', 'com.apple.kpi.dsep', 'com.apple.kpi.iokit', 'com.apple.kpi.libkern', 'com.apple.kpi.mach', 'com.apple.kpi.unsupported']}
+libs['as.vit9696.Lilu'] = '1.4.7'
+info = dict(CFBundleIdentifier=ident, CFBundleExecutable=name, CFBundleName=name, CFBundlePackageType='KEXT', CFBundleVersion=ver,
+            CFBundleShortVersionString=ver, OSBundleCompatibleVersion=ver, OSBundleRequired='Root', OSBundleLibraries=libs,
+            IOKitPersonalities={ident: dict(CFBundleIdentifier=ident, IOClass=name, IOMatchCategory=name, IOProviderClass='IOResources', IOResourceMatch='IOKit')})
+open(path, 'wb').write(plistlib.dumps(info))
+PY
+  nm "$EXE" | grep -q " _kmod_info$" || die "BTLEAdvFixup has no kmod_info"
+  rm -rf "$OUT/$NAME.kext"; cp -R "$O/$NAME.kext" "$OUT/$NAME.kext"; stamp "$OUT/$NAME.kext"
+  say "BTLEAdvFixup $(sha "$EXE")"
+}
+
 stage_nmappfree() {   # Chrome's Widevine with the AMFI boot-args: a Lilu plugin injected by OpenCore. Its own build.sh, given the Lilu and MacKernelSDK above, downloads nothing
   local W=$OBJ/nmappfree
   export_tree "$SRC/NMAppFree" "$W"; mkdir -p "$W/build"
@@ -422,7 +658,7 @@ stage_usbkeeper() {   # USBDiskKeeper: the USB disk OpenCore starts from stays a
   say "USBDiskKeeper $(sha "$OUT/USBDiskKeeper.kext/Contents/MacOS/USBDiskKeeper")"
 }
 
-ALL="rm nvrm nvrmfb nvaccel nvrmagdc nmhda plugin translator nvenc ngshim latsof nitrosense smcnvidiagpu whateverxe hybridpm applealc idisphda mtkwlan mtkbt nmappfree usbkeeper"
+ALL="rm nvrm nvrmfb nvaccel nvrmagdc nmhda plugin translator nvk nvenc latsof nitrosense smcnvidiagpu whateverxe hybridpm applealc idisphda mtkwlan mtkbt btleadv nmappfree usbkeeper"
 [ $# -gt 0 ] || set -- $ALL
 for s in "$@"; do
   case " $ALL " in *" $s "*) ;; *) die "no stage $s; stages: $ALL" ;; esac

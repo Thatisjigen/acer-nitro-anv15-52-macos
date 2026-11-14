@@ -39,15 +39,16 @@ OpenCore EFI and post-install scripts for the Acer Nitro ANV15-52: macOS Tahoe w
 | Protected video, Safari | ❌ | No decoder for protected video |
 | CPU turbo | ✅ | With HybridPM: one core reaches 4.64 GHz, for about 10 W more at idle |
 | Speakers, headphones, internal microphone | ✅ | |
-| HDMI audio | ✅ | |
-| DisplayPort audio over USB-C | ✅ | Also after a short sleep |
+| HDMI audio | ✅ | Volume and mute from macOS, with `nmhdavol=1` |
+| DisplayPort audio over USB-C | ✅ | Also after a short sleep; volume and mute as for HDMI |
 | Keyboard, Fn keys, trackpad | ✅ | |
 | Webcam, USB | ✅ | |
 | Battery, charge limit, fans, sensors | ✅ | NitroSense app |
 | Ethernet | ✅ | The driver loads here, no cable test. Reported working on another PC with this chip |
 | Wi-Fi and Bluetooth, original MediaTek MT7920 | ✅ | Wi-Fi 6 (802.11ax), with the access point's BSS color |
 | Wi-Fi and Bluetooth with an Intel card instead | ✅ | Swap the kexts, see [efi/README.md](efi/README.md#kexts) |
-| AirDrop, Handoff, Continuity | ❌ | |
+| AirDrop | ✅ | With `-mtkawdl`, on by default. Tested with a Pixel through Quick Share: Pixel to Mac with this build, Mac to Pixel with the build just before it. Not tried with an iPhone |
+| Handoff, Continuity | ❔ | Not tested |
 | Powering off the RTX | ❌ | About 41 W at idle |
 | Thunderbolt, FileVault, battery life | ❔ | Not tested |
 
@@ -64,7 +65,7 @@ Full guide: [docs/INSTALL.md](docs/INSTALL.md).
    ```
 3. **rEFInd:** add [efi/refind-opencore.conf](efi/refind-opencore.conf) to `refind.conf`. There is no `BOOTx64.efi` here.
 4. **macOS:** install it from the entry **OpenCore install**, then update to 26.7.3 (25G342).
-5. **Drivers and final EFI,** on the new macOS, with the charger connected. Do not restart until `install` says it has finished.
+5. **Drivers and final EFI,** on the new macOS, with the charger connected. The first `build` also compiles LLVM and clang for NVK: about two hours and 10 GB of disk. Do not restart until `install` says it has finished.
    ```bash
    xcode-select --install
    python3 postinstall/postinstall.py fetch
@@ -90,6 +91,8 @@ On by default. Take them out of `boot-args` in your `config.plist` to go back. W
 | `-wex-nv-video` | Safari decodes video on the RTX ([Safari video](#safari-video-on-the-rtx)) |
 | `-wex-va-renderer` | Hardware video processing on the Iris Xe, through the Intel video driver corrected for this GPU. Experimental |
 | `nvwallpaper=1` | The Aerial wallpaper decodes on the RTX |
+| `-mtkawdl` | AirDrop on the MT7920: AWDL on the Wi-Fi, and the Bluetooth LE advertising that makes this Mac visible |
+| `nmhdavol=1` | Volume and mute for the audio of the displays: HDMI on the RTX, DisplayPort over USB-C |
 | `nvfb10bit=1 nvfbhdr=1` | HDR10 over HDMI on the RTX |
 | `nvrmfbddc=1` | DDC/CI for a monitor on the RTX |
 | `nvrmaspm=1 nvfbkeepfront=1 nvfbvrr=1` | NullMoth's ASPM, frame kept across mode changes and variable refresh: no effect seen here yet |
@@ -129,10 +132,9 @@ With `-wex-nv-video` in the boot-args, Safari's GPU process (`com.apple.WebKit.G
 
 ## Credits
 
-[b00t0x](https://github.com/b00t0x/WhateverXe) for WhateverXe, [nullmoth](https://github.com/nullmoth/nvidia-macos-driver) for the NVIDIA driver, [acidanthera](https://github.com/acidanthera) for OpenCore, Lilu, VirtualSMC and AppleALC, and [mickys](https://github.com/mickys/nvenc), [ptnzzn](https://github.com/ptnzzn/NitroSense-macOS), [zzzyy678](https://github.com/zzzyy678/SMCNvidiaGPU), [pokipoi](https://github.com/pokipoi/LatSOF-Audio), [JulioNectar](https://github.com/JulioNectar/Hackintosh-XPS13Plus-IrisXe-Tahoe) for XE-PM and fixes to the Intel Metal driver, [umeow0716](https://github.com/umeow0716/NootedGreen), [kitsuneislife](https://github.com/kitsuneislife), [e5u](https://github.com/e5u/SimpleMtkWlan) and [flxxxxddd](https://github.com/flxxxxddd/SimpleMtkBtFw) for the MediaTek Wi-Fi and Bluetooth, the Linux mt76 driver, HighDelay, retropineaple, Dino-VN, Dat Nguyen and many others.
+[b00t0x](https://github.com/b00t0x/WhateverXe) for WhateverXe, [nullmoth](https://github.com/nullmoth/nvidia-macos-driver) for the NVIDIA driver, [acidanthera](https://github.com/acidanthera) for OpenCore, Lilu, VirtualSMC and AppleALC, and [mickys](https://github.com/mickys/nvenc), [ptnzzn](https://github.com/ptnzzn/NitroSense-macOS), [zzzyy678](https://github.com/zzzyy678/SMCNvidiaGPU), [pokipoi](https://github.com/pokipoi/LatSOF-Audio), [JulioNectar](https://github.com/JulioNectar/Hackintosh-XPS13Plus-IrisXe-Tahoe) for XE-PM, [kitsuneislife](https://github.com/kitsuneislife), [e5u](https://github.com/e5u/SimpleMtkWlan) and [flxxxxddd](https://github.com/flxxxxddd/SimpleMtkBtFw) for the MediaTek Wi-Fi and Bluetooth, the Linux mt76 driver, HighDelay, retropineaple, Dino-VN, Dat Nguyen and many others.
 
 ## License
 
 Scripts and documents: [MIT](LICENSE). The rest keeps its own license, and **NullMoth's NVIDIA drivers are for noncommercial use only**: [docs/LICENSES.md](docs/LICENSES.md). This repository does not contain macOS or any third-party binary.
 
-[postinstall/xefix/xefix.m](postinstall/xefix/xefix.m) is by JulioNectar, under the [Thou Shalt Not Profit License 1.0](postinstall/xefix/LICENSE-TSNPL-1.0.txt). Section 18 of the Thou Shalt Not Profit License 1.0 allows distribution only with the declaration of its section 17. So: the maintainer of this repository, an individual acting on a not-for-profit basis, represents and declares that they derive no revenue whatsoever from the distribution of this work or of derivative works, or from support or services relating to them.

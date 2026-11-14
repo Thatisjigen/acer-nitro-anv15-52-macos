@@ -90,11 +90,11 @@ Everything was tested on **macOS 26.7.3 (25G342)**. See which build you have:
 sw_vers
 ```
 
-If it is older, update from System Settings. If it is newer, the post-install stops and asks for `--any-build`: nobody has tried that combination. Graphics 0.4.1 says "Tahoe 26.7 or newer" upstream, but that holds for its authors on their hardware.
+If it is older, update from System Settings. If it is newer, the post-install stops and asks for `--any-build`: nobody has tried that combination. Graphics 0.4.4 says "Tahoe 26.7 or newer" upstream, but that holds for its authors on their hardware.
 
 ## 6. Build the drivers
 
-You need about 3 GB free, the network and about 15 minutes. First the build tools, without Xcode:
+You need about 12 GB free and the network. The first `build` takes about two hours: most of it is LLVM and clang, which NVK, the Vulkan driver under the NVIDIA Metal plugin, is compiled with, as NullMoth compiles it. They stay in the build folder, about 3 GB, and a later `build` reuses them: then it takes about 20 minutes. First the build tools, without Xcode:
 
 ```bash
 xcode-select --install

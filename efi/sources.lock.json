@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "date": "2026-11-13",
+ "date": "2026-11-14",
  "opencore": "1.0.9 RELEASE 78d5ff8",
  "tools": {
   "asset": "OpenCore-1.0.9",
@@ -203,7 +203,7 @@
    },
    "NMHDA": {
     "compiled": true,
-    "tested_binary_sha16": "d4787868e224da0f"
+    "tested_binary_sha16": "9daea091cdc5ba8f"
    },
    "AMFIPass": {
     "asset": "AMFIPass-Mod",
@@ -339,7 +339,7 @@
    },
    "WhateverXe": {
     "compiled": true,
-    "tested_binary_sha16": "40335e5b4bb327cc"
+    "tested_binary_sha16": "e5db6e4704d65a5d"
    },
    "XHCI-unsupported": {
     "local": "efi/kexts/XHCI-unsupported.kext",
@@ -389,7 +389,7 @@
    },
    "HybridPM": {
     "compiled": true,
-    "tested_binary_sha16": "c84163688a3246db"
+    "tested_binary_sha16": "581f7fc66dae274d"
    },
    "NitroEC": {
     "compiled": true,
@@ -412,9 +412,13 @@
     "compiled": true,
     "tested_binary_sha16": "1917bcab0b1e8f75"
    },
+   "BTLEAdvFixup": {
+    "compiled": true,
+    "tested_binary_sha16": "21c84ca590b8261d"
+   },
    "AirportMtkWlan": {
     "compiled": true,
-    "tested_binary_sha16": "06e52b92f8052390"
+    "tested_binary_sha16": "fbff2e27ab9cd6cb"
    },
    "IDispHDA": {
     "compiled": true,

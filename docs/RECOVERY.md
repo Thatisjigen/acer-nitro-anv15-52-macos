@@ -18,8 +18,6 @@ Then restart with an EFI without WhateverXe, that is `install`.
 
 **The rollback is always complete.** Half way, the kexts on disk would not match the auxiliary collection, and that combination has never booted. To turn off a single driver use the boot-args below.
 
-**JulioNectar's fixes can be turned off live,** in every process within a second, without a reboot: `echo obx > /private/var/tmp/xedrv.off`. `o` is the compute order, `b` the serial barrier, `x` the blur fix. Remove the file to turn them on again.
-
 The copies are in `/Library/ANV15-52/backup-<date>`. The rollback does not delete them. If it stops half way it can be run again: a `BAD line` message points to a line of the copies' journal that was left alone.
 
 ## macOS does not reach the desktop

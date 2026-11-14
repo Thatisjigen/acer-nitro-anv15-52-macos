@@ -326,7 +326,7 @@
 				<key>BundlePath</key>
 				<string>NMHDA.kext</string>
 				<key>Comment</key>
-				<string>NMHDA of NullMoth, fork branch acer/current: HDMI audio of the RTX, 10DE:22EC</string>
+				<string>NMHDA of NullMoth, fork branch acer/current: HDMI audio of the RTX, 10DE:22EC; nmhdavol=1 gives the audio of the displays volume and mute</string>
 				<key>Enabled</key>
 				<true/>
 				<key>ExecutablePath</key>
@@ -920,7 +920,7 @@
 				<key>BundlePath</key>
 				<string>AirportMtkWlan.kext</string>
 				<key>Comment</key>
-				<string>AirportMtkWlan of SimpleMtkWlan, fork branch acer/current: the original MT7920 Wi-Fi card, Wi-Fi 6 unless -mtknohe, firmware generated at build</string>
+				<string>AirportMtkWlan of SimpleMtkWlan, fork branch acer/current: the original MT7920 Wi-Fi card, Wi-Fi 6 unless -mtknohe, AWDL for AirDrop with -mtkawdl, firmware generated at build</string>
 				<key>Enabled</key>
 				<true/>
 				<key>ExecutablePath</key>
@@ -1044,9 +1044,27 @@
 				<key>Arch</key>
 				<string>x86_64</string>
 				<key>BundlePath</key>
+				<string>BTLEAdvFixup.kext</string>
+				<key>Comment</key>
+				<string>BTLEAdvFixup of ForbiddenItlwm, fork branch acer/current: Bluetooth LE advertising for AirDrop on the MT7920, on with -mtkawdl; needs Lilu</string>
+				<key>Enabled</key>
+				<true/>
+				<key>ExecutablePath</key>
+				<string>Contents/MacOS/BTLEAdvFixup</string>
+				<key>MaxKernel</key>
+				<string>25.99.99</string>
+				<key>MinKernel</key>
+				<string>25.0.0</string>
+				<key>PlistPath</key>
+				<string>Contents/Info.plist</string>
+			</dict>
+			<dict>
+				<key>Arch</key>
+				<string>x86_64</string>
+				<key>BundlePath</key>
 				<string>HybridPM.kext</string>
 				<key>Comment</key>
-				<string>XE-PM (JulioNectar, TSNPL 1.0) as a Lilu plugin; on by default, -nohpm in boot-args turns it off</string>
+				<string>XE-PM (JulioNectar, TSNPL 1.0) as a Lilu plugin; on by default, -nohpm in boot-args turns it off; autonomous HWP on by default, hpmauto=0 turns it off</string>
 				<key>Enabled</key>
 				<true/>
 				<key>ExecutablePath</key>
@@ -1489,7 +1507,7 @@
 				AAAAAAAAAAAAAAAAAAA=
 				</data>
 				<key>boot-args</key>
-				<string>keepsyms=1 ctrsmt=full amfi_get_out_of_my_way=0x1 amfi=0x80 ipc_control_port_options=0 -allow3d -disablegfxfirmware nvrmaspm=1 nvrmfbddc=1 nvfbkeepfront=1 nvfb10bit=1 nvfbhdr=1 nvfbvrr=1 -wex-va-renderer -wex-nv-video nvwallpaper=1</string>
+				<string>keepsyms=1 ctrsmt=full amfi_get_out_of_my_way=0x1 amfi=0x80 ipc_control_port_options=0 -allow3d -disablegfxfirmware nvrmaspm=1 nvrmfbddc=1 nvfbkeepfront=1 nvfb10bit=1 nvfbhdr=1 nvfbvrr=1 -wex-va-renderer -wex-nv-video nvwallpaper=1 nmhdavol=1 -mtkawdl</string>
 				<key>csr-active-config</key>
 				<data>
 				QwoAAA==

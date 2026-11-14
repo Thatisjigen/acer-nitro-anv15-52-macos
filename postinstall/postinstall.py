@@ -45,7 +45,6 @@ STATE_DIR = '/Library/ANV15-52'
 NVMTL = GB + '/NVMTLDriver.bundle'
 METAL = GB + '/AppleIntelTGLGraphicsMTLDriver.bundle/Contents/MacOS/AppleIntelTGLGraphicsMTLDriver'
 IMPOSTOR = GB + '/AppleIntelTGLGraphicsMTLDriver.bundle/Contents/MacOS/impostor.dylib'
-DESCRIPTOR = GB + '/AppleIntelTGLGraphicsMTLDriver.bundle/Contents/MacOS/descriptor.dylib'
 NITRO_DIR = '/Library/Application Support/NitroSense'
 NITRO_PLIST = '/Library/LaunchDaemons/com.nitrosense.nitrod.plist'
 NITRO_APP = '/Applications/NitroSense.app'
@@ -55,31 +54,39 @@ NVMTL_CONF = GB + '/nvmtl/nvrm610.conf'
 NVENCVT_LINE = 'NVMTL_NVENCVT=com.apple.WebKit.GPU'
 NVFW = '/Library/NullMoth/nvfw'   # where NullMoth's installer puts NVIDIA's GSP firmware
 PANEL_OVERRIDE = '/Library/Displays/Contents/Resources/Overrides/DisplayVendorID-e77/DisplayProductID-1513'
+# What NullMoth's installer writes beside the driver and the tested machine does not have: a job that gives the internal panel's brightness
+# back to NVRMFB when the panel is on the NVIDIA GPU (here it is on the Iris Xe), and the note of the gfxrst=4 it adds to the NVRAM boot-args
+# when WhateverGreen is loaded, which OpenCore replaces at every start anyway
+BACKLIGHT_JOB = '/Library/LaunchDaemons/com.nullmoth.backlight.plist'
+NULLMOTH_EXTRAS = [BACKLIGHT_JOB, '/Library/NullMoth/backlight.sh', '/Library/NullMoth/added-boot-args']
+# The Metal shader caches, in each user's cache folder at any depth: Apple's, and those of the NVIDIA plugin
+METAL_CACHES = ['com.apple.gpuarchiver', 'com.apple.metal', 'com.apple.metalfe', 'nvmtl', 'nvmtl-mesa', 'nvmtl-pcache']
 ARTIFACTS = ['NVRM.kext/Contents/MacOS/NVRM', 'NVRMFB.kext/Contents/MacOS/NVRMFB', 'NVAccel.kext/Contents/MacOS/NVAccel',
-             'NVRMAGDC.kext/Contents/MacOS/NVRMAGDC', 'bundle/NVMTLDriver', 'bundle/libnvmtl_translate.dylib', 'bundle/libnvencvt.dylib', 'bundle/impostor.dylib',
+             'NVRMAGDC.kext/Contents/MacOS/NVRMAGDC', 'bundle/NVMTLDriver', 'bundle/libnvmtl_translate.dylib', 'bundle/libnvencvt.dylib', 'nvmtl/libvulkan_nouveau.dylib',
              'LatSOFAudio.kext/Contents/MacOS/LatSOFAudio', 'nitrosense/nitrod', 'nitrosense/nitroctl',
              'nitrosense/NitroSense.app/Contents/MacOS/NitroSense',
              # these go into the EFI, not into /Library: efi/build_efi.py --compiled out/
              'NMHDA.kext/Contents/MacOS/NMHDA', 'NitroEC.kext/Contents/MacOS/NitroEC', 'SMCNvidiaGPU.kext/Contents/MacOS/SMCNvidiaGPU',
              'WhateverXe.kext/Contents/MacOS/WhateverXe', 'HybridPM.kext/Contents/MacOS/HybridPM', 'AppleALC.kext/Contents/MacOS/AppleALC',
              'IDispHDA.kext/Contents/MacOS/IDispHDA', 'AirportMtkWlan.kext/Contents/MacOS/AirportMtkWlan',
-             'SimpleMtkBtPatcher.kext/Contents/MacOS/SimpleMtkBtPatcher', 'NMAppFree.kext/Contents/MacOS/NMAppFree',
+             'SimpleMtkBtPatcher.kext/Contents/MacOS/SimpleMtkBtPatcher', 'BTLEAdvFixup.kext/Contents/MacOS/BTLEAdvFixup', 'NMAppFree.kext/Contents/MacOS/NMAppFree',
              'USBDiskKeeper.kext/Contents/MacOS/USBDiskKeeper']
-GRAPHICS_FORK = 'https://github.com/Thatisjigen/WhateverXe-Graphics.git'
 # Which forks each compiled file comes from. SMCNvidiaGPU is built with NVRM, so both count
 ARTIFACT_FORKS = {
     'NVRM.kext/Contents/MacOS/NVRM': ['nvidia-macos-driver'], 'NVRMFB.kext/Contents/MacOS/NVRMFB': ['nvidia-macos-driver'],
     'NVAccel.kext/Contents/MacOS/NVAccel': ['nvidia-macos-driver'], 'NVRMAGDC.kext/Contents/MacOS/NVRMAGDC': ['nvidia-macos-driver'],
     'NMHDA.kext/Contents/MacOS/NMHDA': ['nvidia-macos-driver'], 'bundle/NVMTLDriver': ['nvidia-macos-driver'], 'bundle/libnvmtl_translate.dylib': ['nvidia-macos-driver'],
+    'nvmtl/libvulkan_nouveau.dylib': ['nvidia-macos-driver'],
     'bundle/libnvencvt.dylib': ['nvenc'], 'LatSOFAudio.kext/Contents/MacOS/LatSOFAudio': ['LatSOF-Audio'],
     'nitrosense/nitrod': ['NitroSense-macOS'], 'nitrosense/nitroctl': ['NitroSense-macOS'], 'nitrosense/NitroSense.app/Contents/MacOS/NitroSense': ['NitroSense-macOS'],
     'NitroEC.kext/Contents/MacOS/NitroEC': ['NitroSense-macOS'], 'SMCNvidiaGPU.kext/Contents/MacOS/SMCNvidiaGPU': ['SMCNvidiaGPU', 'nvidia-macos-driver'],
     'WhateverXe.kext/Contents/MacOS/WhateverXe': ['WhateverXe'], 'HybridPM.kext/Contents/MacOS/HybridPM': ['HybridPM'], 'AppleALC.kext/Contents/MacOS/AppleALC': ['AppleALC'],
     'IDispHDA.kext/Contents/MacOS/IDispHDA': ['AppleALC'], 'AirportMtkWlan.kext/Contents/MacOS/AirportMtkWlan': ['SimpleMtkWlan'],
-    'SimpleMtkBtPatcher.kext/Contents/MacOS/SimpleMtkBtPatcher': ['SimpleMtkBtFw'], 'NMAppFree.kext/Contents/MacOS/NMAppFree': ['NMAppFree'],
+    'SimpleMtkBtPatcher.kext/Contents/MacOS/SimpleMtkBtPatcher': ['SimpleMtkBtFw'], 'BTLEAdvFixup.kext/Contents/MacOS/BTLEAdvFixup': ['ForbiddenItlwm'],
+    'NMAppFree.kext/Contents/MacOS/NMAppFree': ['NMAppFree'],
     'USBDiskKeeper.kext/Contents/MacOS/USBDiskKeeper': ['USBKeeper'],
 }
-COMPILED_FOR_EFI = ['NMHDA', 'NitroEC', 'SMCNvidiaGPU', 'WhateverXe', 'HybridPM', 'AppleALC', 'IDispHDA', 'AirportMtkWlan', 'SimpleMtkBtPatcher', 'NMAppFree',
+COMPILED_FOR_EFI = ['NMHDA', 'NitroEC', 'SMCNvidiaGPU', 'WhateverXe', 'HybridPM', 'AppleALC', 'IDispHDA', 'AirportMtkWlan', 'SimpleMtkBtPatcher', 'BTLEAdvFixup', 'NMAppFree',
                     'USBDiskKeeper']
 EFI_ARTIFACTS = [f'{k}.kext/Contents/MacOS/{k}' for k in COMPILED_FOR_EFI]
 
@@ -246,9 +253,10 @@ def resign_nvmtl(ctx):
 
 class NullMoth(Step):
     name = 'nullmoth'
-    what = 'NullMoth 2.9, the official package and its own installer: the kexts, the Metal plugin, NVK, the GSP firmware. Without its audio driver'
+    what = 'NullMoth 3.0, the official package and its own installer: the kexts, the Metal plugin, NVK, the GSP firmware. Without its audio driver'
     touches = [EXT + '/NVRM.kext', EXT + '/NVAccel.kext', EXT + '/NVRMFB.kext', EXT + '/NVRMAGDC.kext', EXT + '/NMXAudio.kext', NVMTL, GB + '/NVIDIAShared.bundle', GB + '/nvmtl',
-               GB + '/nvmtl-allow.txt', '/Library/NullMoth', '/Users/Shared/nvfw', '/Library/LaunchDaemons/com.nullmoth.bootguard.plist', '/Library/LaunchDaemons/com.nullmoth.lastgood.plist', KC]
+               GB + '/nvmtl-allow.txt', '/Library/NullMoth', '/Users/Shared/nvfw', '/Library/LaunchDaemons/com.nullmoth.bootguard.plist', '/Library/LaunchDaemons/com.nullmoth.lastgood.plist',
+               BACKLIGHT_JOB, KC]
 
     def preflight(self):
         c = self.ctx
@@ -275,6 +283,8 @@ class NullMoth(Step):
                 f'the package has no GSP firmware: its installer takes it out of {MANIFEST["downloads"]["nvidia_run"]["file"]}, which fetch downloaded, so nothing is downloaded as root',
                 'its optional parts stay off: DLSS, the copy of the bundle for Safari, the boost daemon',
                 'removes NMXAudio.kext, which that installer adds on macOS 26: here sound comes from AppleALC, LatSOF-Audio and NMHDA, and the auxkc step rebuilds the collection without it',
+                'removes its brightness job, which only acts on a panel driven by the NVIDIA GPU (here the panel is on the Iris Xe)',
+                'with WhateverGreen loaded, as with the install EFI, that installer adds gfxrst=4 to the NVRAM boot-args: OpenCore writes its own at the next start, and its note of it is removed',
                 'gives the two shared shader caches back to root, as they are on the tested machine',
                 'it ends with "Done. Reboot now" and an "Undo" of its own: both are for its own use, not for this install. Do not restart: the steps after it are not done']
 
@@ -303,8 +313,9 @@ class NullMoth(Step):
             for cache in ('aircache', 'spvcache'):
                 if os.path.isdir(GB + '/nvmtl/' + cache):
                     subprocess.run(['/usr/sbin/chown', '-R', 'root:wheel', GB + '/nvmtl/' + cache], check=True)
-        if os.path.lexists(c.p(EXT + '/NMXAudio.kext')):
-            rmtree(c.p(EXT + '/NMXAudio.kext'))
+        for path in [EXT + '/NMXAudio.kext'] + NULLMOTH_EXTRAS:
+            if os.path.lexists(c.p(path)):
+                rmtree(c.p(path))
 
     def check(self):
         c = self.ctx
@@ -314,8 +325,9 @@ class NullMoth(Step):
             return f'libvulkan_nouveau.dylib is {got}, not the one of the NullMoth package'
         if not os.path.isdir(c.p(EXT + '/NVRM.kext')):
             return 'NVRM.kext was not installed'
-        if os.path.lexists(c.p(EXT + '/NMXAudio.kext')):
-            return 'NMXAudio.kext is still there'
+        for path in [EXT + '/NMXAudio.kext'] + NULLMOTH_EXTRAS:
+            if os.path.lexists(c.p(path)):
+                return f'{path} is still there'
         if not c.fake:   # on a copy of the system tree the installer that puts the firmware there does not run
             for rel, want in files['nullmoth_firmware'].items():
                 got = describe(NVFW + '/' + rel)
@@ -326,7 +338,7 @@ class NullMoth(Step):
 
 class Graphics(Step):
     name = 'graphics'
-    what = 'WhateverXe Graphics 0.4.1, the official pkg: the Intel kexts and bundles (modified Apple drivers, signed by its authors)'
+    what = 'WhateverXe Graphics 0.4.4, the official pkg: the Intel kexts and bundles (modified Apple drivers, signed by its authors)'
     touches = [EXT + '/AppleIntelTGLCompat.kext', EXT + '/AppleIntelTGLGraphics.kext', EXT + '/AppleIntelTGLGraphicsFramebuffer.kext',
                GB + '/AppleIntelTGLGraphicsGLDriver.bundle', GB + '/AppleIntelTGLGraphicsMTLDriver.bundle', GB + '/AppleIntelTGLGraphicsVADriver.bundle',
                GB + '/XeCompilerAdapter.bundle', GB + '/XeOpenCL', '/Library/Preferences/FeatureFlags/Domain/CoreMedia.plist', KC]
@@ -343,7 +355,9 @@ class Graphics(Step):
         return []
 
     def detail(self):
-        return [f'runs installer -pkg {self.package().name}; its postinstall sets AllowOnePassMetalScaling false for the whole system and rebuilds the auxiliary collection']
+        return [f'runs installer -pkg {self.package().name}; its postinstall sets AllowOnePassMetalScaling false for the whole system and rebuilds the auxiliary collection',
+                'its Metal driver already carries the fix for the 96 KiB WindowServer lost at each frame, and its own impostor.dylib stays the bridge of that driver',
+                'its Apple Intel driver starts only through AppleIntelTGLCompat, which needs WhateverXe in the EFI']
 
     def run(self):
         c = self.ctx
@@ -361,90 +375,16 @@ class Graphics(Step):
 
     def check(self):
         c = self.ctx
+        files = MANIFEST['installed_files']
         got = describe(c.p(METAL))
-        if got != MANIFEST['installed_files']['graphics_metal_stock'][:16]:
-            return f'the Metal driver is {got}, not the one of Graphics 0.4.1'
+        if got != files['graphics_metal'][:16]:
+            return f'the Metal driver is {got}, not the one of Graphics 0.4.4'
+        got = describe(c.p(IMPOSTOR))
+        if got != files['graphics_impostor'][:16]:
+            return f'impostor.dylib is {got}, not the one of Graphics 0.4.4'
         for t in self.touches[:6]:
             if not os.path.isdir(c.p(t)):
                 return f'{t} was not installed'
-        return None
-
-
-class Posh(Step):
-    name = 'posh'
-    what = 'Two bytes in the installed Intel Metal driver, so that WindowServer stops losing 96 KiB per frame: the script of the Graphics fork'
-    touches = [GB + '/AppleIntelTGLGraphicsMTLDriver.bundle']
-
-    def script(self):
-        return self.ctx.dl / MANIFEST['downloads']['posh_patch']['file']
-
-    def preflight(self):
-        s = self.script()
-        if not s.exists():
-            return [f'{s} is missing: run fetch']
-        recorded = Path(str(s) + '.sha256')   # fetch writes it when it takes the latest of the branch
-        if sha256(s) != (recorded.read_text().strip() if recorded.exists() else MANIFEST['downloads']['posh_patch']['sha256']):
-            return [f'{s} does not have the expected hash']
-        return []
-
-    def detail(self):
-        return ['runs posh_patch.sh dryrun, then patch; it refuses any file but the Metal driver of Graphics 0.4.0, which 0.4.1 carries unchanged, and the patched file is never published']
-
-    def env(self):
-        c = self.ctx
-        env = {'POSH_GO': '1', 'POSH_BACKUP': str(c.backup / 'posh')}
-        if c.fake:
-            env['POSH_BUNDLE'] = c.p(GB + '/AppleIntelTGLGraphicsMTLDriver.bundle')
-        return env
-
-    def run(self):
-        c = self.ctx
-        c.run(['/bin/bash', self.script(), 'dryrun'], env=self.env())
-        c.run(['/bin/bash', self.script(), 'patch'], env=self.env())
-
-    def check(self):
-        got = describe(self.ctx.p(METAL))
-        if got != MANIFEST['installed_files']['graphics_metal_patched'][:16]:
-            return f'the Metal driver is {got}, not the patched one'
-        return None
-
-
-class NGShim(Step):
-    name = 'ngshim'
-    what = 'NGShim of umeow0716 with three fixes of JulioNectar, in place of impostor.dylib of Graphics, the bridge of the Intel Metal driver'
-    touches = [IMPOSTOR]
-    needs_out = ['bundle/impostor.dylib']
-
-    def preflight(self):
-        c = self.ctx
-        files = MANIFEST['installed_files']
-        if not os.path.exists(c.p(IMPOSTOR)):
-            return []  # the graphics step comes first
-        if sha256(c.p(IMPOSTOR)) != files['graphics_impostor_stock']:
-            return ['impostor.dylib is not the one of Graphics 0.4.1']
-        if sha256(c.p(DESCRIPTOR)) != files['graphics_descriptor']:
-            return ['descriptor.dylib is not the one NGShim was compared with']
-        return []
-
-    def detail(self):
-        return ['after posh, whose checks want the bundle as Graphics sealed it: from here a deep check of the bundle can fail, and the blend test of verify is the check']
-
-    def run(self):
-        c = self.ctx
-        problems = self.preflight()
-        if problems:
-            raise Stop(problems[0])
-        # the impostor of Graphics exports one symbol that NGShim does not: nothing else may use it
-        others = subprocess.run(['/usr/bin/grep', '-l', '-a', '-r', 'xe_install_descriptor_placement', c.p(GB), c.p(EXT)], capture_output=True, text=True, errors='replace').stdout.split('\n')
-        others = [x for x in others if x and x != c.p(IMPOSTOR)]
-        if others:
-            raise Stop('something else uses the export of the impostor of Graphics, NGShim cannot replace it: ' + others[0])
-        put_file(c, c.out / 'bundle/impostor.dylib', c.p(IMPOSTOR))
-
-    def check(self):
-        c = self.ctx
-        if sha256(c.p(IMPOSTOR)) != sha256(c.out / 'bundle/impostor.dylib'):
-            return 'impostor.dylib is not the build'
         return None
 
 
@@ -547,30 +487,63 @@ class Decoder(Step):
         return None
 
 
-class NvkBinds(Step):
-    name = 'nvk-binds'
-    what = 'NVK without its 2964 weak binds that dyld searches in vain: new apps start the Metal driver faster'
+class Nvk(Step):
+    name = 'nvk'
+    what = 'NVK, the Vulkan driver under the Metal plugin, built from source in place of the package\'s: with the completion event registered only while something waits on it, and without the 2964 weak binds dyld searches in vain in every app that opens Metal'
     touches = [GB + '/nvmtl/libvulkan_nouveau.dylib']
+    needs_out = ['nvmtl/libvulkan_nouveau.dylib']
+
+    def detail(self):
+        return ['the build stage nvk makes it; without it install stops here before anything: it never falls back to the package\'s']
 
     def run(self):
-        c = self.ctx
-        lib = c.p(self.touches[0])
-        files = MANIFEST['installed_files']
-        if sha256(lib) != files['nvk_in']:
-            raise Stop('libvulkan_nouveau.dylib is not the one of the NullMoth package')
-        with tempfile.TemporaryDirectory() as t:
-            new = Path(t) / 'libvulkan_nouveau.dylib'
-            print('   ' + subprocess.run([sys.executable, '-I', str(HERE / 'drop_flat_weak_binds.py'), lib, str(new)], check=True, capture_output=True, text=True).stdout.strip())
-            if sha256(new) != files['nvk_patched_unsigned']:
-                raise Stop(f'the patched library is {sha256(new)[:16]}, expected {files["nvk_patched_unsigned"][:16]}')
-            subprocess.run(['/usr/bin/codesign', '-f', '-s', '-', '--identifier', files['nvk_identifier'], str(new)], check=True, capture_output=True)
-            put_file(c, new, lib)
+        put_file(self.ctx, self.ctx.out / self.needs_out[0], self.ctx.p(self.touches[0]))
 
     def check(self):
         lib = self.ctx.p(self.touches[0])
+        if sha256(lib) != sha256(self.ctx.out / self.needs_out[0]):
+            return 'libvulkan_nouveau.dylib is not the build'
         if subprocess.run(['/usr/bin/codesign', '--verify', lib], capture_output=True).returncode:
             return 'the signature of libvulkan_nouveau.dylib does not verify'
-        return None if sha256(lib) != MANIFEST['installed_files']['nvk_in'] else 'libvulkan_nouveau.dylib did not change'
+        return None
+
+
+def cache_owners():
+    """WindowServer and the person installing: the users whose Metal programs were compiled for the drivers that were there before"""
+    users = ['_windowserver', os.environ.get('SUDO_USER', ''),
+             subprocess.run(['/usr/bin/stat', '-f', '%Su', '/dev/console'], capture_output=True, text=True).stdout.strip()]
+    return [u for i, u in enumerate(users) if u and u != 'root' and u not in users[:i]]
+
+
+def metal_cache_dirs(user):
+    """Every Metal shader cache of that user, the ones nested per program included. Only under the user's own cache folder"""
+    base = subprocess.run(['/usr/bin/sudo', '-n', '-u', user, '/usr/bin/getconf', 'DARWIN_USER_CACHE_DIR'], capture_output=True, text=True).stdout.strip()
+    if not re.fullmatch(r'/(private/)?var/folders/[^/]+/[^/]+/C/?', base) or not os.path.isdir(base):
+        return []
+    found = []
+    for dirpath, dirs, _ in os.walk(base):
+        for d in [d for d in dirs if d in METAL_CACHES]:
+            found.append(os.path.join(dirpath, d))
+            dirs.remove(d)
+    return found
+
+
+class MetalCache(Step):
+    name = 'metal-cache'
+    what = 'The Metal shader caches of WindowServer and of your user emptied: programs compiled for the drivers that were there before render corrupted on every display until they are rebuilt'
+    touches = []
+
+    def detail(self):
+        return [f'{", ".join(METAL_CACHES)} under the cache folder of {" and ".join(cache_owners())}; they are rebuilt at the next start and are not copied for rollback']
+
+    def run(self):
+        if self.ctx.fake:   # the caches are outside the system tree
+            print('   left alone on a copy of the system tree')
+            return
+        for user in cache_owners():
+            for d in metal_cache_dirs(user):
+                shutil.rmtree(d, ignore_errors=True)
+                print(f'   emptied ({user}): {d}')
 
 
 class LatSOF(Step):
@@ -677,7 +650,7 @@ class NitroSense(Step):
         return None if os.path.isdir(c.p(NITRO_APP)) else 'NitroSense.app was not copied'
 
 
-STEPS = [NullMoth, Graphics, Posh, NGShim, NvrmKexts, Plugin, Decoder, NvkBinds, LatSOF, PanelHiDPI, AuxKC, NitroSense]
+STEPS = [NullMoth, Graphics, NvrmKexts, Plugin, Decoder, Nvk, MetalCache, LatSOF, PanelHiDPI, AuxKC, NitroSense]
 
 
 # ---------------------------------------------------------------- backups
@@ -769,7 +742,7 @@ def cmd_doctor(ctx):
     for b in blocking:
         print('STOP  ' + b)
     total, used, free = shutil.disk_usage(ctx.work if ctx.work.exists() else Path.home())
-    print(f'{"ok   " if free > 6e9 else "STOP "} {free / 1e9:.0f} GB free; fetch and build need about 3 GB in {ctx.work}')
+    print(f'{"ok   " if free > 12e9 else "STOP "} {free / 1e9:.0f} GB free; fetch and build need about 10 GB in {ctx.work} at the peak, while NVK\'s LLVM is built')
     power = subprocess.run(['/usr/bin/pmset', '-g', 'batt'], capture_output=True, text=True).stdout.splitlines()[:1]
     print(f'note  {power[0] if power else "power source unknown"}; plug the charger in before install')
     found = existing(ctx)
@@ -832,19 +805,6 @@ def remote_head(ctx, url, ref):
     return head[0]
 
 
-def fetch_posh(ctx):
-    """The script of the Graphics fork, from the same branch as the others. Its hash goes next to it, and install checks that."""
-    d = dict(MANIFEST['downloads']['posh_patch'])
-    if not ctx.args.tested:
-        tested = re.search(r'/([0-9a-f]{40})/', d['url'])[1]
-        head = remote_head(ctx, GRAPHICS_FORK, 'acer/current')
-        if head != tested:
-            d['url'] = d['url'].replace(tested, head)
-            del d['sha256']
-    path = download(ctx, 'posh_patch', d)
-    Path(str(path) + '.sha256').write_text(sha256(path) + '\n')
-
-
 def cmd_fetch(ctx):
     if os.geteuid() == 0:
         raise Stop('fetch and build run as your user, without sudo')
@@ -867,9 +827,6 @@ def cmd_fetch(ctx):
         raise Stop(f'the NullMoth package does not match its SHA256SUMS: {r.stdout[-300:]}')
     download(ctx, 'nvidia_run')   # about 550 MB: NullMoth's installer takes the GSP firmware out of it, and keeps nothing else
     download(ctx, 'graphics')
-    fetch_posh(ctx)
-    (ctx.deps / 'ngshim').mkdir(exist_ok=True)
-    shutil.copyfile(download(ctx, 'ngshim_src'), ctx.deps / 'ngshim/ngshim.m')
     lilu = download(ctx, 'lilu_debug')
     shutil.copyfile(lilu, ctx.deps / 'lilu-debug.zip')
     if not (ctx.deps / 'lilu-debug/Lilu.kext').exists():
@@ -892,6 +849,8 @@ def cmd_fetch(ctx):
         (ctx.deps / mesa['strip']).rename(include)
     if tree_sha256(include) != mesa['tree_sha256']:   # GitLab builds the archive on request, so the hash is of the files
         raise Stop('the Vulkan headers of Mesa are not the expected ones')
+    for name in [n for n in MANIFEST['downloads'] if n.startswith('nvk_')]:   # NVK's sources and toolchain: the nvk stage of build unpacks them
+        download(ctx, name)
     for name in ('webkit_cmbase', 'webkit_vtdec', 'mt7920_patch', 'mt7920_ram', 'mtkbt_zip'):
         d = MANIFEST['downloads'][name]
         target = ctx.deps / d['dest']
@@ -1146,17 +1105,16 @@ def cmd_state(ctx):
             ('LatSOFAudio', EXT + '/LatSOFAudio.kext/Contents/MacOS/LatSOFAudio', 'LatSOFAudio.kext/Contents/MacOS/LatSOFAudio'),
             ('translator', NVMTL + '/Contents/MacOS/libnvmtl_translate.dylib', 'bundle/libnvmtl_translate.dylib'),
             ('decoder', NVMTL + '/Contents/MacOS/libnvdec_h264.dylib', 'bundle/libnvencvt.dylib'),
+            ('NVK', GB + '/nvmtl/libvulkan_nouveau.dylib', 'nvmtl/libvulkan_nouveau.dylib'),
             ('nitrod', NITRO_DIR + '/nitrod', 'nitrosense/nitrod')]
     for label, path, rel in rows:
         cur = describe(ctx.p(path))
         print(f'{label:12} {cur:16} {"= the build" if built.get(rel, "").startswith(cur) else "built " + built[rel][:16] if rel in built else ""}')
     metal = describe(ctx.p(METAL))
     files = MANIFEST['installed_files']
-    print(f'{"Metal driver":12} {metal:16} {"patched" if metal == files["graphics_metal_patched"][:16] else "stock 0.4.1" if metal == files["graphics_metal_stock"][:16] else ""}')
+    print(f'{"Metal driver":12} {metal:16} {"of Graphics 0.4.4" if metal == files["graphics_metal"][:16] else ""}')
     bridge = describe(ctx.p(IMPOSTOR))
-    print(f'{"Metal bridge":12} {bridge:16} {"NGShim" if built.get("bundle/impostor.dylib", "").startswith(bridge) or MANIFEST["tested_binaries"]["bundle/impostor.dylib"]["sha256"].startswith(bridge) else "of Graphics 0.4.1" if bridge == files["graphics_impostor_stock"][:16] else ""}')
-    nvk = describe(ctx.p(GB + '/nvmtl/libvulkan_nouveau.dylib'))
-    print(f'{"NVK":12} {nvk:16} {"without flat binds" if nvk == files["nvk_out"][:16] else "as in the NullMoth package" if nvk == files["nvk_in"][:16] else ""}')
+    print(f'{"Metal bridge":12} {bridge:16} {"of Graphics 0.4.4" if bridge == files["graphics_impostor"][:16] else ""}')
     print(f'{"collection":12} {describe(ctx.p(KC)):16}')
     print(f'{"NVMTL seal":12} {"ok" if subprocess.run(["/usr/bin/codesign", "--verify", ctx.p(NVMTL)], capture_output=True).returncode == 0 else "does not verify, or absent"}')
     return 0
@@ -1191,7 +1149,9 @@ def cmd_verify(ctx):
     line(gpu_has_metal(displays, 'RTX 5050'), 'RTX 5050 with Metal')
     print('\n'.join('      ' + x.strip() for x in displays.splitlines() if re.search(r'Chipset Model|Metal Support|UI Looks like|Connection Type', x)))
     metal = describe(METAL)
-    line(metal == MANIFEST['installed_files']['graphics_metal_patched'][:16], f'Metal driver patched for the POSH leak ({metal})')
+    line(metal == MANIFEST['installed_files']['graphics_metal'][:16], f'Metal driver of Graphics 0.4.4 ({metal})')
+    bridge = describe(IMPOSTOR)
+    line(bridge == MANIFEST['installed_files']['graphics_impostor'][:16], f'impostor.dylib of Graphics 0.4.4 ({bridge})')
     line(subprocess.run(['/usr/bin/codesign', '--verify', NVMTL], capture_output=True).returncode == 0, 'NVMTLDriver.bundle seal')
     with tempfile.TemporaryDirectory() as t:
         probe = Path(t) / 'blendtest'

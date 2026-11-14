@@ -5,7 +5,7 @@
 
 --root keeps every write inside a temporary folder, and there kmutil, installer and launchctl do not run. What this shows: the order of the
 steps, the refusals, the copies, the way back. What it cannot show: that the real drivers load. Needs macOS with the Command Line Tools,
-for codesign, pkgbuild and clang. The step nvk-binds is left out here, because it wants the real NVK library.
+for codesign, pkgbuild and clang.
 """
 import hashlib
 import importlib.util
@@ -27,7 +27,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / 'postinstall/postinstall.py'
 REAL = json.loads((ROOT / 'postinstall/manifest.json').read_text())
 KEXTS = ['NVRM', 'NVRMFB', 'NVAccel', 'NVRMAGDC']
-FOR_EFI = ['NMHDA', 'NitroEC', 'SMCNvidiaGPU', 'WhateverXe', 'HybridPM', 'AppleALC', 'IDispHDA', 'AirportMtkWlan', 'SimpleMtkBtPatcher', 'NMAppFree', 'USBDiskKeeper']
+FOR_EFI = ['NMHDA', 'NitroEC', 'SMCNvidiaGPU', 'WhateverXe', 'HybridPM', 'AppleALC', 'IDispHDA', 'AirportMtkWlan', 'SimpleMtkBtPatcher', 'BTLEAdvFixup', 'NMAppFree', 'USBDiskKeeper']
 
 
 def sha(path):
@@ -80,12 +80,13 @@ class Fixture:
         machine_code(out / 'bundle/NVMTLDriver', 'plugin')
         machine_code(out / 'bundle/libnvmtl_translate.dylib', 'translator')
         machine_code(out / 'bundle/libnvencvt.dylib', 'decoder')
-        machine_code(out / 'bundle/impostor.dylib', 'bridge')
+        (out / 'nvmtl').mkdir()
+        machine_code(out / 'nvmtl/libvulkan_nouveau.dylib', 'nvk built here')
         write(out / 'nitrosense/nitrod', 'nitrod\n')
         write(out / 'nitrosense/nitroctl', 'nitroctl\n')
         write(out / 'nitrosense/NitroSense.app/Contents/MacOS/NitroSense', 'app\n')
         files = {}
-        for rel in [f'{k}.kext/Contents/MacOS/{k}' for k in KEXTS + ['LatSOFAudio'] + FOR_EFI] + ['bundle/NVMTLDriver', 'bundle/libnvmtl_translate.dylib', 'bundle/libnvencvt.dylib', 'bundle/impostor.dylib',
+        for rel in [f'{k}.kext/Contents/MacOS/{k}' for k in KEXTS + ['LatSOFAudio'] + FOR_EFI] + ['bundle/NVMTLDriver', 'bundle/libnvmtl_translate.dylib', 'bundle/libnvencvt.dylib', 'nvmtl/libvulkan_nouveau.dylib',
                                                                                          'nitrosense/nitrod', 'nitrosense/nitroctl', 'nitrosense/NitroSense.app/Contents/MacOS/NitroSense']:
             files[rel] = sha(out / rel)
         write(out / 'manifest.json', json.dumps({'files': files, 'forks': {'WhateverXe': 'a' * 40}}))
@@ -110,6 +111,10 @@ class Fixture:
         write(pkg / 'Library/GPUBundles/nvmtl/nvrm610.conf', 'NVMTL_RES2_WS=1\n')
         write(pkg / 'Library/GPUBundles/nvmtl-allow.txt', '*\n')
         write(pkg / 'Library/NullMoth/kexts/26/NVAccel.kext/Contents/MacOS/NVAccel', 'release NVAccel\n')
+        # what NullMoth's installer writes beside the driver, and the nullmoth step removes
+        write(pkg / 'Library/NullMoth/backlight.sh', 'backlight job\n')
+        write(pkg / 'Library/LaunchDaemons/com.nullmoth.backlight.plist', 'backlight job\n')
+        write(pkg / 'Library/NullMoth/added-boot-args', 'gfxrst=4\n')
         write(pkg / 'install.sh', '#!/bin/bash\nexit 1\n')
         sums = subprocess.run('find Library -type f -exec shasum -a 256 {} +', shell=True, cwd=pkg, capture_output=True, text=True, check=True).stdout
         write(pkg / 'SHA256SUMS', sums)
@@ -124,40 +129,36 @@ class Fixture:
             write(payload / f'Library/GPUBundles/{name}.bundle/Contents/Info.plist', f'{name}\n')
         metal = write(payload / 'Library/GPUBundles/AppleIntelTGLGraphicsMTLDriver.bundle/Contents/MacOS/AppleIntelTGLGraphicsMTLDriver', 'stock metal\n')
         impostor = write(payload / 'Library/GPUBundles/AppleIntelTGLGraphicsMTLDriver.bundle/Contents/MacOS/impostor.dylib', 'impostor of Graphics\n')
-        descriptor = write(payload / 'Library/GPUBundles/AppleIntelTGLGraphicsMTLDriver.bundle/Contents/MacOS/descriptor.dylib', 'descriptor\n')
+        write(payload / 'Library/GPUBundles/AppleIntelTGLGraphicsMTLDriver.bundle/Contents/MacOS/descriptor.dylib', 'descriptor\n')
         write(payload / 'Library/GPUBundles/XeOpenCL/x', 'x\n')
         common = self.base / 'Common.pkg'
         subprocess.run(['/usr/bin/pkgbuild', '--quiet', '--root', str(payload), '--identifier', 'test.Common', '--version', '1', str(common)], check=True)
         subprocess.run(['/usr/bin/productbuild', '--quiet', '--package', str(common), str(dl / 'graphics.pkg')], check=True)
 
-        # The POSH script's contract: dryrun, patch with a backup, POSH_BUNDLE for a copy
-        # POSH_WAIT: stays in dryrun until Ctrl-C, then cleans up slowly, as an installer does
-        posh = write(dl / 'posh_patch.sh', '#!/bin/bash\nset -e\nBIN=$POSH_BUNDLE/Contents/MacOS/AppleIntelTGLGraphicsMTLDriver\n'
-                     'if [ -n "${POSH_WAIT:-}" ]; then trap \'sleep 0.5; echo cleaning up; echo done > "$POSH_WAIT.cleaned"; exit 3\' INT; echo > "$POSH_WAIT.started"; while :; do sleep 0.1; done; fi\n'
-                     'case $1 in dryrun) grep -q stock "$BIN" ;; patch) [ "$POSH_GO" = 1 ]; [ -z "${POSH_MUST_FAIL:-}" ]; mkdir -p "$POSH_BACKUP"; cp "$BIN" "$POSH_BACKUP/"; echo "patched metal" > "$BIN" ;; esac\n')
-
         self.manifest = json.loads(json.dumps(REAL))
         downloads = self.manifest['downloads']
         downloads['nullmoth'].update(file='nullmoth.tar.gz', sha256=sha(dl / 'nullmoth.tar.gz'), sums_sha256=sha(pkg / 'SHA256SUMS'))
         downloads['graphics'].update(file='graphics.pkg', sha256=sha(dl / 'graphics.pkg'))
-        downloads['posh_patch'].update(file='posh_patch.sh', sha256=sha(posh))
-        patched = self.base / 'patched'
-        patched.write_text('patched metal\n')
         self.manifest['installed_files'].update(
             nullmoth_decoders={'libnvdec_h264.dylib': sha(macos / 'libnvdec_h264.dylib'), 'libnvdec_hevc.dylib': sha(macos / 'libnvdec_hevc.dylib')},
-            nvk_in=sha(nvk), graphics_metal_stock=sha(metal), graphics_metal_patched=sha(patched),
-            graphics_impostor_stock=sha(impostor), graphics_descriptor=sha(descriptor))
+            nvk_in=sha(nvk), graphics_metal=sha(metal), graphics_impostor=sha(impostor))
         self.manifest_path = write(self.base / 'manifest.json', json.dumps(self.manifest))
+        # A Graphics package with the hash its manifest names, which the installer cannot open: the graphics step fails after nullmoth
+        broken = write(dl / 'graphics-broken.pkg', 'not a package\n')
+        other = json.loads(json.dumps(self.manifest))
+        other['downloads']['graphics'].update(file=broken.name, sha256=sha(broken))
+        self.broken_graphics = {'ANV_MANIFEST': str(write(self.base / 'manifest-broken-graphics.json', json.dumps(other)))}
 
     def run(self, *args, env=None, check=True):
-        full = dict(os.environ, ANV_MANIFEST=str(self.manifest_path), **(env or {}))
+        full = dict(os.environ, ANV_MANIFEST=str(self.manifest_path))
+        full.update(env or {})
         r = subprocess.run([sys.executable, '-I', str(SCRIPT), *args, '--root', str(self.root), '--work', str(self.work)], capture_output=True, text=True, env=full)
         if check and r.returncode:
             raise AssertionError(r.stdout + r.stderr)
         return r
 
     def install(self, *extra, env=None, check=True):
-        return self.run('install', '--go', '--skip', 'nvk-binds', *extra, env=env, check=check)
+        return self.run('install', '--go', *extra, env=env, check=check)
 
     def close(self):
         shutil.rmtree(self.base, ignore_errors=True)
@@ -183,16 +184,20 @@ class Install(unittest.TestCase):
             self.assertEqual(sha(ext / f'{k}.kext/Contents/MacOS/{k}'), sha(self.f.work / f'out/{k}.kext/Contents/MacOS/{k}'))
         self.assertFalse((ext / 'NVRM.kext/Contents/_CodeSignature').exists(), 'the signature of the release must go')
         self.assertFalse((ext / 'NMXAudio.kext').exists(), 'the audio driver of the package must not stay')
+        for extra in ('Library/LaunchDaemons/com.nullmoth.backlight.plist', 'Library/NullMoth/backlight.sh', 'Library/NullMoth/added-boot-args'):
+            self.assertFalse((self.root / extra).exists(), f'{extra} must not stay')
         macos = self.root / 'Library/GPUBundles/NVMTLDriver.bundle/Contents/MacOS'
         self.assertEqual(sha(macos / 'libnvmtl_translate.dylib'), sha(self.f.work / 'out/bundle/libnvmtl_translate.dylib'))
         self.assertEqual(sha(macos / 'libnvdec_h264.dylib'), sha(self.f.work / 'out/bundle/libnvencvt.dylib'))
         self.assertEqual(sha(macos / 'libnvencvt.dylib'), sha(self.f.work / 'out/bundle/libnvencvt.dylib'))
         self.assertEqual(os.readlink(macos / 'libnvdec_hevc.dylib'), 'libnvdec_h264.dylib')
+        self.assertEqual(sha(self.root / 'Library/GPUBundles/nvmtl/libvulkan_nouveau.dylib'), sha(self.f.work / 'out/nvmtl/libvulkan_nouveau.dylib'))
         self.assertEqual((self.root / 'Library/GPUBundles/nvmtl/nvrm610.conf').read_text(), 'NVMTL_RES2_WS=1\nNVMTL_NVENCVT=com.apple.WebKit.GPU\n')
         self.assertTrue((self.root / 'Library/Displays/Contents/Resources/Overrides/DisplayVendorID-e77/DisplayProductID-1513').is_file())
         self.assertEqual(subprocess.run(['/usr/bin/codesign', '--verify', str(macos.parent.parent)], capture_output=True).returncode, 0)
-        self.assertEqual((self.root / 'Library/GPUBundles/AppleIntelTGLGraphicsMTLDriver.bundle/Contents/MacOS/AppleIntelTGLGraphicsMTLDriver').read_text(), 'patched metal\n')
-        self.assertEqual(sha(self.root / 'Library/GPUBundles/AppleIntelTGLGraphicsMTLDriver.bundle/Contents/MacOS/impostor.dylib'), sha(self.f.work / 'out/bundle/impostor.dylib'))
+        intel = self.root / 'Library/GPUBundles/AppleIntelTGLGraphicsMTLDriver.bundle/Contents/MacOS'
+        self.assertEqual((intel / 'AppleIntelTGLGraphicsMTLDriver').read_text(), 'stock metal\n')
+        self.assertEqual((intel / 'impostor.dylib').read_text(), 'impostor of Graphics\n', 'the bridge stays the one of Graphics')
         self.assertEqual(stat.S_IMODE(os.stat(ext / 'NVRM.kext/Contents/MacOS/NVRM').st_mode), 0o755)
         self.assertEqual((self.root / 'Library/KernelCollections/AuxiliaryKernelExtensions.kc').read_text(), 'collection of the auxkc step\n')
         self.assertTrue((self.root / 'Library/LaunchDaemons/com.nitrosense.nitrod.plist').exists())
@@ -255,9 +260,9 @@ class Install(unittest.TestCase):
         self.assertEqual(tree(self.root), before)
 
     def test_a_step_that_fails_stops_and_rollback_still_works(self):
-        r = self.f.install(env={'POSH_MUST_FAIL': '1'}, check=False)
+        r = self.f.install(env=self.f.broken_graphics, check=False)
         self.assertNotEqual(r.returncode, 0)
-        self.assertIn('posh failed', r.stderr)
+        self.assertIn('graphics failed', r.stderr)
         self.assertIn('rollback.sh', r.stderr)
         self.assertFalse((self.root / 'Library/Extensions/LatSOFAudio.kext').exists(), 'the steps after it must not run')
         self.f.run('rollback', '--go')
@@ -265,7 +270,7 @@ class Install(unittest.TestCase):
 
     def test_a_run_that_stopped_goes_on_and_keeps_its_first_copies(self):
         old = write(self.root / 'Library/GPUBundles/XeOpenCL/mine', 'from before\n')
-        self.f.install('--allow-existing', env={'POSH_MUST_FAIL': '1'}, check=False)
+        self.f.install('--allow-existing', env=self.f.broken_graphics, check=False)
         self.assertFalse((self.root / 'Library/Extensions/LatSOFAudio.kext').exists())
         out = self.f.install().stdout
         self.assertIn('same copies', out)
@@ -315,6 +320,14 @@ class Install(unittest.TestCase):
         self.assertEqual(tree(self.root), before)
         self.assertIn('the EFI needs it', self.f.run('plan').stdout)
 
+    def test_an_nvk_that_was_not_built_stops_before_anything(self):
+        before = tree(self.root)
+        os.unlink(self.f.work / 'out/nvmtl/libvulkan_nouveau.dylib')
+        r = self.f.install(check=False)
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn('nvmtl/libvulkan_nouveau.dylib is not built', r.stderr)
+        self.assertEqual(tree(self.root), before)
+
     def test_a_copy_that_fails_leaves_no_line_and_is_made_again(self):
         unreadable = write(self.root / 'Library/Extensions/NVAccel.kext/Contents/MacOS/NVAccel', 'someone else\n')
         os.chmod(unreadable, 0)
@@ -332,9 +345,19 @@ class Install(unittest.TestCase):
         self.assertEqual(unreadable.read_text(), 'someone else\n')
 
     def test_ctrl_c_lets_the_running_command_finish_its_clean_up(self):
-        mark = str(self.f.base / 'posh')
-        p = subprocess.Popen([sys.executable, '-I', str(SCRIPT), 'install', '--go', '--skip', 'nvk-binds', '--root', str(self.root), '--work', str(self.f.work)],
-                             env=dict(os.environ, ANV_MANIFEST=str(self.f.manifest_path), POSH_WAIT=mark), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+        # What NullMoth's installer and Apple's installer get from Ctx.run: stays until Ctrl-C, then cleans up slowly
+        mark = str(self.f.base / 'slow')
+        slow = write(self.f.base / 'slow.sh', 'trap \'sleep 0.5; echo cleaning up; echo done > "$1.cleaned"; exit 3\' INT\necho > "$1.started"\nwhile :; do sleep 0.1; done\n')
+        driver = ('import argparse, importlib.util, sys\n'
+                  'spec = importlib.util.spec_from_file_location("postinstall", sys.argv[1])\n'
+                  'm = importlib.util.module_from_spec(spec)\n'
+                  'spec.loader.exec_module(m)\n'
+                  'try:\n'
+                  '    m.Ctx(argparse.Namespace(work=sys.argv[2])).run(["/bin/bash", sys.argv[3], sys.argv[4]])\n'
+                  'except m.Stop as e:\n'
+                  '    sys.exit(f"STOP: {e}")\n')
+        p = subprocess.Popen([sys.executable, '-I', '-c', driver, str(SCRIPT), str(self.f.work), str(slow), mark],
+                             env=dict(os.environ, ANV_MANIFEST=str(self.f.manifest_path)), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
                              start_new_session=True, preexec_fn=lambda: signal.signal(signal.SIGINT, signal.SIG_DFL))
         for _ in range(600):
             if os.path.exists(mark + '.started'):
@@ -347,23 +370,6 @@ class Install(unittest.TestCase):
         self.assertTrue(os.path.exists(mark + '.cleaned'), 'its clean-up must not die on a closed pipe')
         self.assertIn('cleaning up', out)
         self.assertIn('interrupted', err)
-        self.assertIn('rollback.sh', err)
-
-    def test_the_script_fetch_recorded_is_the_one_install_accepts(self):
-        # fetch writes the hash of the latest posh_patch.sh next to it: another hash stops, and that one is accepted
-        script = self.f.work / 'dl/posh_patch.sh'
-        recorded = Path(str(script) + '.sha256')
-        recorded.write_text('0' * 64 + '\n')
-        before = tree(self.root)
-        r = self.f.install(check=False)
-        self.assertNotEqual(r.returncode, 0)
-        self.assertIn('expected hash', r.stderr)
-        self.assertEqual(tree(self.root), before)
-        with open(script, 'a') as f:
-            f.write('# a newer version of the script\n')
-        recorded.write_text(sha(script) + '\n')
-        self.f.install()
-        self.assertEqual((self.root / 'Library/GPUBundles/AppleIntelTGLGraphicsMTLDriver.bundle/Contents/MacOS/AppleIntelTGLGraphicsMTLDriver').read_text(), 'patched metal\n')
 
     def test_a_step_name_that_does_not_exist_is_refused(self):
         before = tree(self.root)
@@ -381,7 +387,7 @@ class Install(unittest.TestCase):
         self.assertEqual(tree(self.root), before)
 
     def test_another_build_cannot_go_on_top_of_a_run_that_stopped(self):
-        self.f.install(env={'POSH_MUST_FAIL': '1'}, check=False)
+        self.f.install(env=self.f.broken_graphics, check=False)
         built = self.f.work / 'out/manifest.json'
         manifest = json.loads(built.read_text())
         manifest['forks']['WhateverXe'] = 'b' * 40

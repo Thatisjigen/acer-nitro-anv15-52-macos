@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "date": "2026-11-13",
+ "date": "2026-11-14",
  "tested": {
   "macos_version": "26.7.3",
   "macos_builds": [
@@ -17,13 +17,13 @@
    "url": "https://github.com/Thatisjigen/nvidia-macos-driver.git",
    "ref": "acer/current",
    "license": "PolyForm Noncommercial 1.0.0; translator LGPL-3.0",
-   "tested_commit": "70d179e872db4be6f93c86017546a17d2d6adabf"
+   "tested_commit": "81cf050fdb0abe181e13e7595e22c4528c05465d"
   },
   "WhateverXe": {
    "url": "https://github.com/Thatisjigen/WhateverXe.git",
    "ref": "acer/current",
    "license": "BSD-3-Clause",
-   "tested_commit": "ac06a8f5ee9735ff454e777bdf0312cf2a3c66ac"
+   "tested_commit": "948e37079fc9b917f49bb94912e2d8a2b4652e73"
   },
   "nvenc": {
    "url": "https://github.com/Thatisjigen/nvenc.git",
@@ -59,18 +59,24 @@
    "url": "https://github.com/Thatisjigen/HybridPM.git",
    "ref": "main",
    "license": "Thou Shalt Not Profit 1.0",
-   "tested_commit": "4438286f62e2fcd829b27c665bb14e5618f25971"
+   "tested_commit": "95e0649bdaed561e4bcfd67fd75b0857172135cf"
   },
   "SimpleMtkWlan": {
    "url": "https://github.com/Thatisjigen/SimpleMtkWlan.git",
    "ref": "acer/current",
-   "tested_commit": "2d202e490a21275d26051bed6bd040854c8b94ed",
+   "tested_commit": "b909dc25603978cd7d7648175c5706cb2ad33efa",
    "license": "GPL-2.0"
   },
   "SimpleMtkBtFw": {
    "url": "https://github.com/Thatisjigen/SimpleMtkBtFw.git",
    "ref": "acer/current",
    "tested_commit": "5c2e42405f78e88b6e88c02e7f8e3652e84edda9",
+   "license": "GPL-3.0"
+  },
+  "ForbiddenItlwm": {
+   "url": "https://github.com/Thatisjigen/ForbiddenItlwm.git",
+   "ref": "acer/current",
+   "tested_commit": "4e61c65632149cdb02cea48468588d7fe7b8a3d1",
    "license": "GPL-3.0"
   },
   "NMAppFree": {
@@ -130,11 +136,11 @@
  },
  "downloads": {
   "nullmoth": {
-   "file": "nullmoth-nvidia-2.9.tar.gz",
-   "url": "https://github.com/nullmoth/nvidia-macos-driver/releases/download/v2.9/nullmoth-nvidia-2.9.tar.gz",
-   "sha256": "b624bf07c78cea03043e096383d5c8b01e4fb2c804a6ba377a4e66a2566422ef",
+   "file": "nullmoth-nvidia-3.0.tar.gz",
+   "url": "https://github.com/nullmoth/nvidia-macos-driver/releases/download/v3.0/nullmoth-nvidia-3.0.tar.gz",
+   "sha256": "40f0390d0b7cda75637991879b09abb7f8f7e3e5db2e811196963b3a2cacbcad",
    "license": "PolyForm Noncommercial 1.0.0, Mesa, NVIDIA firmware licence: licenses/ in the package",
-   "sums_sha256": "5383b0f83c8d4a9d4fa8e5434117dd950baaa17696a4fd0ad1f51fda3b27cfbe"
+   "sums_sha256": "86d4b8b87a6cc02265483a71fcffa6cf619cf4be7c0802b17caf0cb333dc6ca8"
   },
   "nvidia_run": {
    "file": "NVIDIA-Linux-x86_64-620.70.06.run",
@@ -143,16 +149,10 @@
    "license": "NVIDIA's driver licence: NullMoth's installer keeps only the four GSP firmware files of it, in /Library/NullMoth/nvfw; never published here"
   },
   "graphics": {
-   "file": "WhateverXe-Graphics-0.4.1.pkg",
-   "url": "https://github.com/b00t0x/WhateverXe-Graphics/releases/download/v0.4.1/WhateverXe-Graphics-0.4.1.pkg",
-   "sha256": "7f7ce3b924ad421cff0c4f30534598858474b8c9539c4b889a461bc1d5fed02c",
+   "file": "WhateverXe-Graphics-0.4.4.pkg",
+   "url": "https://github.com/b00t0x/WhateverXe-Graphics/releases/download/v0.4.4/WhateverXe-Graphics-0.4.4.pkg",
+   "sha256": "f4c2d680a7c52c33a3f038ce6945da0aa2cc044e62b935a52ea046c7c473cfec",
    "license": "BSD-2-Clause for its tools; the payload is modified Apple drivers, which is why this repository only points at it"
-  },
-  "posh_patch": {
-   "file": "posh_patch.sh",
-   "url": "https://raw.githubusercontent.com/Thatisjigen/WhateverXe-Graphics/9fb55d3e87612d8ea89603e98468a08721b78f34/tools/posh_patch.sh",
-   "sha256": "551b9cd83c905ee5a8af5e47fea33a27caa8a46d8e54180b28af2222c1198af2",
-   "license": "BSD-2-Clause"
   },
   "lilu_debug": {
    "file": "lilu-debug.zip",
@@ -190,13 +190,6 @@
    "dest": "webkit-spi/VTVideoDecoderSPI.h",
    "license": "BSD"
   },
-  "ngshim_src": {
-   "file": "ngshim.m",
-   "url": "https://raw.githubusercontent.com/umeow0716/NootedGreen/cf0760e5592db7c3dd5f6caf7a7cc69d1050c4d6/NGShim/ngshim.m",
-   "sha256": "cf7e92521c7c9ae54c9facc55077c227bd2a3b317ee3b7bac3f2fd5ed3bbf077",
-   "dest": "ngshim/ngshim.m",
-   "license": "Thou Shalt Not Profit 1.0"
-  },
   "mt7920_patch": {
    "file": "WIFI_MT7961_patch_mcu_1a_2_hdr.bin",
    "url": "https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git/plain/mediatek/WIFI_MT7961_patch_mcu_1a_2_hdr.bin?id=87414f9ba8f875cb733281652474bccf93313e2f",
@@ -217,6 +210,60 @@
    "sha256": "77033ec72f182c14bb4be51809a7d1f017f92a6b6f36bab44f094faca1df656d",
    "dest": "mtkbt/SimpleMtkBtFw-1.1.0-DEBUG.zip",
    "license": "GPL-3.0; only the Info.plist of the patcher is taken from it"
+  },
+  "nvk_mesa": {
+   "file": "mesa-90a959ebba9dbb36f2ea5176091c15d6ebdd0af0.tar.gz",
+   "url": "https://gitlab.freedesktop.org/mesa/mesa/-/archive/90a959ebba9dbb36f2ea5176091c15d6ebdd0af0/mesa-90a959ebba9dbb36f2ea5176091c15d6ebdd0af0.tar.gz",
+   "sha256": "457e72f9bbb2acddb6c952bd7326ad92ed37650e7c83a0e4ea51f0109a7dd7fb",
+   "license": "MIT and others, Mesa's own: the commit mesa-26.3.0-rc3 NullMoth builds NVK from"
+  },
+  "nvk_ogkm610": {
+   "file": "open-gpu-kernel-modules-610.57.04-e4a5faa2.tar.gz",
+   "url": "https://codeload.github.com/NVIDIA/open-gpu-kernel-modules/tar.gz/e4a5faa2567f28c8eabe0ebb6422b6d0abcf37eb",
+   "sha256": "7fff4ba80f8295d5bdb5853c81fae9a8c07d8d0ad6de5382f5525725ab9e39ac",
+   "license": "MIT and GPL-2.0: the headers NVK compiles against"
+  },
+  "nvk_python": {
+   "file": "cpython-3.12.16+20261026-x86_64-apple-darwin-install_only.tar.gz",
+   "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20261026/cpython-3.12.16%2B20261026-x86_64-apple-darwin-install_only.tar.gz",
+   "sha256": "a962e47df522889eaa7ff0d6a56203f1079f68aabb65ffdbe8455f362bc769f3",
+   "license": "PSF and the licences listed in the archive: the Python that runs meson"
+  },
+  "nvk_llvm": {
+   "file": "llvm-project-22.1.8.src.tar.xz",
+   "url": "https://github.com/llvm/llvm-project/releases/download/llvmorg-22.1.8/llvm-project-22.1.8.src.tar.xz",
+   "sha256": "922f1817a0df7b1489272d18134ee0087a8b068828f87ac63b9861b1a9965888",
+   "license": "Apache-2.0 with LLVM exceptions: clang, libLLVM and the libc++ headers, built on your machine"
+  },
+  "nvk_glslang": {
+   "file": "glslang-385445a8.tar.gz",
+   "url": "https://codeload.github.com/KhronosGroup/glslang/tar.gz/385445a87d21d7a5c7bee2f7bef8a87850f6bf28",
+   "sha256": "0fb828fda8b0378cf74df4d3a5c83ab46e9c91b19db7aef3a0ccd0e7107e67a6",
+   "license": "BSD-3-Clause and others: compiles the shaders built into NVK"
+  },
+  "nvk_spirv_tools": {
+   "file": "SPIRV-Tools-v2026.4.tar.gz",
+   "url": "https://codeload.github.com/KhronosGroup/SPIRV-Tools/tar.gz/refs/tags/v2026.4",
+   "sha256": "92df4c377603f086c3d2a1eb2bd9b8f883a73ca890fb939d78a0cecdcc01686c",
+   "license": "Apache-2.0"
+  },
+  "nvk_spirv_translator": {
+   "file": "SPIRV-LLVM-Translator-v22.1.7.tar.gz",
+   "url": "https://codeload.github.com/KhronosGroup/SPIRV-LLVM-Translator/tar.gz/refs/tags/v22.1.7",
+   "sha256": "2b46118831851f1d43eaf20f05ae9cec4088a666e169d9fe4762b9b21826842b",
+   "license": "Apache-2.0 with LLVM exceptions"
+  },
+  "nvk_spirv_headers_tools": {
+   "file": "SPIRV-Headers-49654312.tar.gz",
+   "url": "https://codeload.github.com/KhronosGroup/SPIRV-Headers/tar.gz/496543121ce6419f23d6fa5d7194ba66c36212d2",
+   "sha256": "a9bb9c48713245eacf97cc539b6f1d45405a92d8813f8b82e635f0a085ee9898",
+   "license": "MIT"
+  },
+  "nvk_spirv_headers_translator": {
+   "file": "SPIRV-Headers-575b6512.tar.gz",
+   "url": "https://codeload.github.com/KhronosGroup/SPIRV-Headers/tar.gz/575b6512579ebde466ed3dfc04e413439d14d95d",
+   "sha256": "775ee89eb77d067df3f5736e2b4bb2f5f3e39ead915f11f3d366139dcb42209d",
+   "license": "MIT"
   }
  },
  "build_env": {
@@ -226,24 +273,19 @@
   "NVKMS_DATE": "Tue Nov 10 13:47:05 CET 2026",
   "NVENC_VERSION": "v0.9.5-g346a449",
   "NMHDA_DATE": "2026-11-01",
-  "WHATEVERXE_DATE": "2026-11-13",
+  "WHATEVERXE_DATE": "2026-11-14",
   "IDISPHDA_DATE": "2026-11-05",
   "MTKBT_DATE": "2026-11-06",
   "NMAPPFREE_DATE": "2026-11-06"
  },
  "installed_files": {
   "nullmoth_decoders": {
-   "libnvdec_h264.dylib": "ebf782888d4663955f6d7ce04dc158b7b5cfb78f48651450305b3e56abf88d15",
-   "libnvdec_hevc.dylib": "bf11a0bddd05e387f9b793ff80390314680df8c0ed92401e75b6cab7740b4eaf"
+   "libnvdec_h264.dylib": "6068bacc3ef379c87985d28e4e177bd5b0b28f09c4263c4e786bc4bd3d3f16d0",
+   "libnvdec_hevc.dylib": "64b2353a900dc8bb6feb6c4b0037b948bdcb5d568d4573693cc56f3b7ba1e537"
   },
-  "nvk_in": "8ba678d6825256816ef693b67c59f907efa9a0ab9d41703cf7a5e04c9b8a7de0",
-  "nvk_out": "cd6bb795f1c0b76fe5f95d08874cffc9b95b58de946af0309467b80068f0ee20",
-  "nvk_identifier": "libvulkan_nouveau-5555494403a5860eb2103b2da1cb56f8e2699ca7",
-  "graphics_metal_stock": "1e5e4f5bd76ff567a102125dfa3c74a255934d45c753a88aedcbfac7dab53c6c",
-  "graphics_metal_patched": "b24816e801f5c76d6ea0d2a9645d3fef3d1cd912e14060d6f4446780f413b422",
-  "nvk_patched_unsigned": "16e5f2b336c747825b638a7c77717a0e08177eee46adc6ba0c5437cf5206b0f4",
-  "graphics_impostor_stock": "cd415a30e111d9ad48e6dd1936d848c1e809821aa3770c93ae7c759a4454567c",
-  "graphics_descriptor": "fe6aa99b5a854373a261d8cfff634f890fa068f1965b4a220dd54bb93188d76b",
+  "nvk_in": "e614521bd06d1c17a1996db977e7faec6749c0fc7da7dc55f0d79dafbad10e52",
+  "graphics_metal": "25b6c72ee23fb71f91384982fb591d6d1e514c73be3fea99831b4559d0ec4faa",
+  "graphics_impostor": "cd415a30e111d9ad48e6dd1936d848c1e809821aa3770c93ae7c759a4454567c",
   "nullmoth_firmware": {
    "nvidia/620.70.06/gsp_ga10x.bin": "26a32926507e19e8c92911ed6a9b7981c9699c7a10bb78cc76b4f4abcbff84b6",
    "nvidia/620.70.06/gsp_tu10x.bin": "92af243e48c22325568ce24ef2edf5fa257b9bacc10a18fd38342cddeaf83fd8",
@@ -263,30 +305,28 @@
  ],
  "tested_binaries": {
   "NVRM.kext/Contents/MacOS/NVRM": {
-   "sha256": "ef5e7c764de941b7026c558ba4894f44a86009c0c3550acbb3bb25ba056dcdb6"
+   "sha256": "b9dbc698dade75edf0feb5fafe440790ee5a4320bb18649e65c60cba0ba79eb5"
   },
   "NVRMFB.kext/Contents/MacOS/NVRMFB": {
-   "sha256": "dc80d98650fa2d49d579c8d00983b84f4c10f47de988bc9da15b1e7fe04b7ed4"
+   "sha256": "0f7391c26db83604197f90c1c151d2719764ce6113d10268ed95ed0300cb891d"
   },
   "NVAccel.kext/Contents/MacOS/NVAccel": {
-   "sha256": "aa865e1482450334730bb074132d380b9f5a8729c980aed9a223658475ff7283"
+   "sha256": "6add0fe72acc2221451d9af28d1ffd80097098587266b851aa3d1d8ea4537f93"
   },
   "NVRMAGDC.kext/Contents/MacOS/NVRMAGDC": {
-   "sha256": "33f606391c72fd6a1fdfe791e3db1fd91de16ed5549121b7adbf7a3c936a1f1e",
-   "note": "what runs was built before NullMoth 2.9, whose source only adds the nvagdcheads=1 switch, off by default",
-   "reference_sha256": "7133106805d847b3c77f0829ef8861bbded5ada41023cacdfa0104f977d756fb"
+   "sha256": "7133106805d847b3c77f0829ef8861bbded5ada41023cacdfa0104f977d756fb"
   },
   "NMHDA.kext/Contents/MacOS/NMHDA": {
-   "sha256": "d4787868e224da0f2f87b506108c7ccfd51529454e85c99f2f1cf256d222686b",
-   "note": "what runs was built before NullMoth 2.9, whose source adds volume and mute for HDMI audio: not yet run on the test machine",
-   "reference_sha256": "6db849ca4fb03212b155b4b606b7c8cdb671efafb340c3b4f6d466db2f0326df"
+   "sha256": "9daea091cdc5ba8f84bce3808cd62f38caae8fe7e4e92c1d9c9383b93a760b29"
   },
   "bundle/NVMTLDriver": {
-   "sha256": "7b2149c25f8f4d89d1985793b4e7d1fd3db97f5b22b07968709a089d8e2028e3"
+   "sha256": "d4c4f0f49983949f63047ca8c1229e749843b495a74b1d8314a41579a24a1371",
+   "note": "same code and UUID; what runs carries the seal of the bundle it is installed in",
+   "reference_sha256": "4ec01563b06dc00ca13602dec2adef76f22e8c0135422761f58fd69ffda72a56"
   },
   "bundle/libnvmtl_translate.dylib": {
-   "sha256": "87593b29361577caa7aa827e7f56b331864d68fe4d211a2b49ca62df94000e62",
-   "note": "same sources; what ran keeps the paths of the folder it was built in, here they read /build/translator",
+   "sha256": "203e9632a698420321423c94233bde710baaa75a1068320ec9339457337dd456",
+   "note": "same sources; what runs keeps the paths of the folder it was built in, here they read /build/translator",
    "reference_sha256": "9e77e0b6e765ac0196246b740f0912d15ec3816090bb0568678c3d6fbd73376d"
   },
   "bundle/libnvencvt.dylib": {
@@ -319,38 +359,44 @@
    "sha256": "c250090d414abd5e42e67ed27244de07dbe3bbdc5c4b809943cfef54108b4b35"
   },
   "WhateverXe.kext/Contents/MacOS/WhateverXe": {
-   "sha256": "40335e5b4bb327cc66e5f981a29b1cb60b504a613a5907caf55ac1df7aa86e17",
-   "sha256_without_uuid": "6b8bf1f99fb6b014ca773616dc2c48faa07265b89ad9b9d1567520e30e5e8bdc",
+   "sha256": "e5db6e4704d65a5d123fe3d5e61454e6b51f6a910c7640feaadebf88f04d52e1",
+   "sha256_without_uuid": "787d4ce26e0c649eec2c0f892d40c6029e433671c57f18dce2dcc37a58c5874b",
    "note": "same code; what runs has the old names of its diagnostics, its IORegistry keys among them, and the UUID depends on the folder of the build",
-   "reference_sha256": "7f134ec592695222cbeef56482a4c44b9678ebbe4e08ec10e318640dca8c1c34",
-   "reference_sha256_without_uuid": "2150479650aa98ae5ea7ef2eed3d80f5a812c926274dee86dfeb8ad9b8870ac6"
+   "reference_sha256": "ca4b80cd3cfa614a99916549f1bef7c423d8c6d81bf78ff54e36ec2c64b0af5d",
+   "reference_sha256_without_uuid": "087fa3380713b2fb66300250891dfdaf76d6225e5d4c8966b24604ffd51bb5dd"
   },
   "HybridPM.kext/Contents/MacOS/HybridPM": {
-   "sha256": "c84163688a3246db1e09b5d4c5ab44c1cad279d8f2fa0b2c35829c7048469bca"
+   "sha256": "581f7fc66dae274d8d09e8b3aa68350c9e579c315cd5add2e4bd13e020c1b73a"
   },
   "AppleALC.kext/Contents/MacOS/AppleALC": {
    "sha256": "b2860ae275fd537f7f95f5aab01add0d412c21fc270ea20be020a9bfe0cfc8b1"
-  },
-  "bundle/impostor.dylib": {
-   "sha256": "ce0b7248e2324e446b54d3ba6e27ab2e302637dedb5299b75e9ce6ab7e4863e4",
-   "note": "the test machine has run the impostor of Graphics since it reinstalled Graphics 0.4.1; this NGShim build ran there before"
   },
   "IDispHDA.kext/Contents/MacOS/IDispHDA": {
    "sha256": "d6e59bfcffcd7f9d362f42662a364eb85374b9520dc413d8971bdb79bcdee0cc"
   },
   "AirportMtkWlan.kext/Contents/MacOS/AirportMtkWlan": {
-   "sha256": "06e52b92f8052390b584accd5f48690b1ad680a04c777d8352d95b91a39fc435",
-   "note": "the one that ran carries the short commit of the local branch it was built from in its version string; built with that string it is the same file",
-   "reference_sha256": "568363c64dbb7e58710ed4a189bae5432f5a2f8f899652433cdb6acef9f4c75d"
+   "sha256": "fbff2e27ab9cd6cb3730c6b1bd005369ff7dde1132dd9cbee557ba47a6139a96",
+   "note": "the one that runs carries the short commit of the local branch it was built from in its version string; built with that string it is the same file",
+   "reference_sha256": "efa1b1529befe7d673e5eccd8baa3d97014a6d4aee7e117bcd7032ed624ebc8b"
   },
   "SimpleMtkBtPatcher.kext/Contents/MacOS/SimpleMtkBtPatcher": {
    "sha256": "1917bcab0b1e8f757e78398736e1fe209875dc27cf2b20255dfc827859c7beb0"
+  },
+  "BTLEAdvFixup.kext/Contents/MacOS/BTLEAdvFixup": {
+   "sha256": "21c84ca590b8261d4f21e36320b4da8a573fd930841f08d5f0f8614627fc7e55",
+   "sha256_without_uuid": "cf666e1ed114a91461e287f2a1ee3bd2c61f6afa87f103847e4d70f8381da981",
+   "note": "same code; only the UUID differs, into which the linker of the one that runs hashed the paths and times of its debug map",
+   "reference_sha256": "42a195b270a72cc199a9928784dc93feace783944d6a5b1ca44ef683ad0c9294",
+   "reference_sha256_without_uuid": "cf666e1ed114a91461e287f2a1ee3bd2c61f6afa87f103847e4d70f8381da981"
   },
   "NMAppFree.kext/Contents/MacOS/NMAppFree": {
    "sha256": "de0fd2495c5f1cac059b74b399aaa67dcac25ef409cb9f6e2d88a7c9b57c88b6"
   },
   "USBDiskKeeper.kext/Contents/MacOS/USBDiskKeeper": {
    "sha256": "a4bc9997b22c062ab863e2f1f9b4677d88385f6f879930c3dae6b6b43789a839"
+  },
+  "nvmtl/libvulkan_nouveau.dylib": {
+   "sha256": "31093d37ae73360c744f3fcd3e0cb3e6dcff3cd592d4d230a540097b9f9a3725"
   }
  }
 }

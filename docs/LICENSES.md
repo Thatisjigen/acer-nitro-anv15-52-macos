@@ -11,10 +11,7 @@ The rule of this repository: **no Apple binary and no third-party package unless
 | `efi/kexts/XHCI-unsupported.kext/Contents/Info.plist` | GPL-2.0 ([text](../efi/licenses/GPL-2.0.txt)) | By RehabMan, with more IDs than in his repository; only an `Info.plist` |
 | `efi/acpi/SSDT-NITRO.*` | GPL-3.0 | From ptnzzn's fork of NitroSense-macOS |
 | `efi/acpi/SSDT-USB-Reset.*` | Not stated | Copied from the EFI of NullMoth's 1401 app: 110 bytes, one condition on `_STA`. To be redone separately if the author asks |
-| `postinstall/drop_flat_weak_binds.py`, `layoutcheck.m`, `blendtest.m` | MIT | Written for this project |
-| `postinstall/xefix/xefix.m` | Thou Shalt Not Profit 1.0 ([text](../postinstall/xefix/LICENSE-TSNPL-1.0.txt)) | A modified copy of part of `macos/src/libxedrv.m` by [JulioNectar](https://github.com/JulioNectar/Hackintosh-XPS13Plus-IrisXe-Tahoe), commit `dabacb7`, with his notice and the list of changes at the top. Non-profit use, same license |
-
-**Non-profit declaration, for `xefix.m`:** Section 18 of the Thou Shalt Not Profit License 1.0 allows distribution only with the declaration of its section 17. So: the maintainer of this repository, an individual acting on a not-for-profit basis, represents and declares that they derive no revenue whatsoever from the distribution of this work or of derivative works, or from support or services relating to them.
+| `postinstall/drop_flat_weak_binds.py`, `blendtest.m`, `nvk-requirements.txt` | MIT | Written for this project |
 
 ## What is downloaded
 
@@ -28,11 +25,16 @@ URLs and hashes are in [efi/sources.lock.json](../efi/sources.lock.json) and [po
 | BlueToolFixup (BrcmPatchRAM) | GPL-2.0 | Downloaded |
 | NVMeFix, VoodooPS2, RealtekRTL8111, CpuTopologyRebuild, SimpleHDA, USBToolBox, IntelBluetoothFirmware, AMFIPass | See each project | Downloaded |
 | `HfsPlus.efi`, `apfs_aligned.efi` | Apple binaries | Downloaded from acidanthera/OcBinaryData, never copied here |
-| WhateverXe Graphics 0.4.1 | Tools BSD-2-Clause, payloads excluded | **Modified Apple drivers:** downloaded from b00t0x's release. The file patched by `posh_patch.sh` is created on your machine and must not be published |
-| NullMoth 2.9 | PolyForm Noncommercial 1.0.0; Mesa; NVIDIA firmware with its own license | Downloaded from the release. **Noncommercial use** |
+| WhateverXe Graphics 0.4.4 | Tools BSD-2-Clause, payloads excluded | **Modified Apple drivers:** downloaded from b00t0x's release and installed as they are |
+| NullMoth 3.0 | PolyForm Noncommercial 1.0.0; Mesa; NVIDIA firmware with its own license | Downloaded from the release. **Noncommercial use** |
 | NVIDIA Linux driver 620.70.06 (`.run`) | NVIDIA's driver licence | Downloaded from NVIDIA; NullMoth's installer keeps only the four GSP firmware files of it, in `/Library/NullMoth/nvfw`. Never published here |
 | Sound Open Firmware firmware | Intel license | Downloaded, embedded in the kext on your machine. Do not publish that kext without reading `LICENCE.Intel` |
-| open-gpu-kernel-modules | MIT and GPL-2.0 | Downloaded to compile NVRM |
+| open-gpu-kernel-modules | MIT and GPL-2.0 | Downloaded to compile NVRM, and its 610.57.04 headers for NVK |
+| Mesa 26.3.0-rc3 (`90a959eb`) | MIT for NVK, the rest as each file says | Downloaded to compile NVK with the patches of the NVIDIA fork. NAK's Rust crates come from crates.io through Mesa's `.wrap` files; the fork lists their licences in `licenses/nvk-rust-crates.txt` |
+| LLVM and clang 22.1.8, SPIRV-LLVM-Translator 22.1.7 | Apache-2.0 with LLVM exceptions | Sources downloaded and compiled on your machine, only to build NVK |
+| glslang, SPIRV-Tools, SPIRV-Headers | BSD-3-Clause, Apache-2.0, MIT | Sources downloaded and compiled on your machine, only to build NVK |
+| Python 3.12 (python-build-standalone), meson, ninja, mako, MarkupSafe, PyYAML, packaging, cmake, pkgconf | PSF, Apache-2.0, MIT, BSD | Downloaded with their hashes into a folder of the build, only to build NVK |
+| Rust 1.97.1, bindgen, cbindgen | MIT or Apache-2.0; cbindgen MPL-2.0 | Installed by rustup and cargo into the build folder, only to build NVK |
 | SimpleMtkBtFw | GPL-3.0 | Downloaded; one USB match is added to its `Info.plist`. The patcher's `Info.plist` also comes from this release |
 | MT7920 firmware, from linux-firmware | MediaTek's licence (`LICENCE.mediatek`) | Downloaded with its hash and built into AirportMtkWlan on your machine. It may be redistributed with MediaTek chips, but not under the GPL: **do not publish the compiled kext** |
 
@@ -40,10 +42,9 @@ URLs and hashes are in [efi/sources.lock.json](../efi/sources.lock.json) and [po
 
 | Fork | License | What it means |
 | --- | --- | --- |
-| nvidia-macos-driver | PolyForm Noncommercial 1.0.0; translator LGPL-3.0 | **The compiled kexts and plugin are for noncommercial use only.** The branch also holds 25 commits by kitsuneislife from [nmx-intel](https://github.com/kitsuneislife/nmx-intel), 4 in the NVAccel compiled here and 21 in NMIntelFB, which is not installed here. That project states no license: the author agreed to their use, with nothing in writing |
+| nvidia-macos-driver | PolyForm Noncommercial 1.0.0; translator LGPL-3.0 | **The compiled kexts, plugin and NVK are for noncommercial use only:** NVK is Mesa's MIT code with the fork's patches. The branch also holds 25 commits by kitsuneislife from [nmx-intel](https://github.com/kitsuneislife/nmx-intel), 4 in the NVAccel compiled here and 21 in NMIntelFB, which is not installed here. That project states no license: the author agreed to their use, with nothing in writing |
 | NvGfx (`darwin.mk`, to compile NVIDIA's RM and NVKMS for macOS) | PolyForm Noncommercial 1.0.0 | Not redistributed |
 | HybridPM | Thou Shalt Not Profit 1.0 | XE-PM code by JulioNectar: non-profit use, same license |
-| NGShim (`ngshim.m` of umeow0716/NootedGreen) | Thou Shalt Not Profit 1.0 | Downloaded with its hash and compiled on your machine with `xefix.m`, not redistributed |
 | WhateverXe, AppleALC | BSD-3-Clause | |
 | SimpleMtkWlan | GPL-2.0 | Without its firmware, which is generated at build |
 | SimpleMtkBtFw (the patcher) | GPL-3.0 | |
