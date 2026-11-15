@@ -128,7 +128,7 @@ python3 efi/build_efi.py deploy --profile full --volume /Volumes/OPENCORE --go
 
 ## 8. The drivers
 
-Nothing in these scripts restarts the PC. Read the plan, and connect the charger.
+Nothing in these scripts restarts the PC. Read the plan, and connect the charger. Keep the network: the last step downloads about 750 MB of NVIDIA's files for DLSS 4 (`--skip dlss` leaves it out, see the [README](../README.md#dlss-4)).
 
 ```bash
 python3 postinstall/postinstall.py plan

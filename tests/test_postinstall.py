@@ -85,9 +85,18 @@ class Fixture:
         write(out / 'nitrosense/nitrod', 'nitrod\n')
         write(out / 'nitrosense/nitroctl', 'nitroctl\n')
         write(out / 'nitrosense/NitroSense.app/Contents/MacOS/NitroSense', 'app\n')
+        # DLSS: a dlss_fetch.sh that only leaves a mark, as on a copy of the system tree it must not run
+        self.dlss_ran = self.base / 'dlss_fetch.ran'
+        fetch = write(out / 'dlss-pkg/dlss_fetch.sh', f'#!/bin/bash\necho ran > "{self.dlss_ran}"\n')
+        os.chmod(fetch, 0o755)
+        for tool in ('dlss_cache', 'nm_unzstd'):
+            os.chmod(write(out / f'dlss-pkg/dlss/{tool}', f'{tool}\n'), 0o755)
+        write(out / 'dlss-pkg/dlss/assertfail_trap.ptx', 'ptx\n')
         files = {}
         for rel in [f'{k}.kext/Contents/MacOS/{k}' for k in KEXTS + ['LatSOFAudio'] + FOR_EFI] + ['bundle/NVMTLDriver', 'bundle/libnvmtl_translate.dylib', 'bundle/libnvencvt.dylib', 'nvmtl/libvulkan_nouveau.dylib',
-                                                                                         'nitrosense/nitrod', 'nitrosense/nitroctl', 'nitrosense/NitroSense.app/Contents/MacOS/NitroSense']:
+                                                                                         'nitrosense/nitrod', 'nitrosense/nitroctl', 'nitrosense/NitroSense.app/Contents/MacOS/NitroSense',
+                                                                                         'dlss-pkg/dlss_fetch.sh', 'dlss-pkg/dlss/dlss_cache', 'dlss-pkg/dlss/nm_unzstd',
+                                                                                         'dlss-pkg/dlss/assertfail_trap.ptx']:
             files[rel] = sha(out / rel)
         write(out / 'manifest.json', json.dumps({'files': files, 'forks': {'WhateverXe': 'a' * 40}}))
 
@@ -327,6 +336,21 @@ class Install(unittest.TestCase):
         self.assertNotEqual(r.returncode, 0)
         self.assertIn('nvmtl/libvulkan_nouveau.dylib is not built', r.stderr)
         self.assertEqual(tree(self.root), before)
+
+    def test_dlss_checks_its_copy_and_downloads_nothing_on_a_copy_of_the_system_tree(self):
+        out = self.f.install().stdout
+        self.assertIn('dlss_fetch.sh not run on a copy of the system tree', out)
+        self.assertFalse(self.f.dlss_ran.exists(), 'dlss_fetch.sh must not run outside the real system')
+        self.assertFalse((self.root / 'Library/NullMoth/dlss').exists())
+
+    def test_dlss_tools_that_were_not_built_stop_before_anything_unless_skipped(self):
+        before = tree(self.root)
+        os.unlink(self.f.work / 'out/dlss-pkg/dlss/dlss_cache')
+        r = self.f.install(check=False)
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn('dlss-pkg/dlss/dlss_cache is not built', r.stderr)
+        self.assertEqual(tree(self.root), before)
+        self.assertNotIn('== 12/12 dlss', self.f.install('--skip', 'dlss').stdout)
 
     def test_a_copy_that_fails_leaves_no_line_and_is_made_again(self):
         unreadable = write(self.root / 'Library/Extensions/NVAccel.kext/Contents/MacOS/NVAccel', 'someone else\n')

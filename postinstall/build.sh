@@ -385,6 +385,15 @@ EOT
   say "NVK $(sha "$OUT/nvmtl/libvulkan_nouveau.dylib"), $(cat "$LOGS/nvk-binds.log")"
 ) }
 
+stage_dlss() {   # DLSS 4: the two tools NullMoth's dlss_fetch.sh runs on this Mac, built by NullMoth's own script, with that script beside them.
+  # No file of NVIDIA's here: install has dlss_fetch.sh download them, checked against the hashes pinned inside it
+  local S=$OBJ/dlss/src O=$OBJ/dlss/out
+  export_tree "$NM" "$S" build/build_dlss_cache.sh dlss package/dlss_fetch.sh; rm -rf "$O"
+  bash "$S/build/build_dlss_cache.sh" "$O" > "$LOGS/dlss.log" 2>&1 || { tail -20 "$LOGS/dlss.log"; die "DLSS tools"; }
+  rm -rf "$OUT/dlss-pkg"; cp -R "$O" "$OUT/dlss-pkg"; stamp "$OUT/dlss-pkg"
+  say "DLSS: dlss_cache $(sha "$OUT/dlss-pkg/dlss/dlss_cache"), nm_unzstd $(sha "$OUT/dlss-pkg/dlss/nm_unzstd"), dlss_fetch.sh $(sha "$OUT/dlss-pkg/dlss_fetch.sh")"
+}
+
 stage_nvenc() {   # libnvencvt: the decoders for H.264, HEVC, VP9 and AV1 on the RTX 5050, with the frames untiled on the Iris Xe
   local F=$SRC/nvenc K=$DEPS/open-gpu-kernel-modules-610 D=$DEPS/open-gpu-doc S=$DEPS/webkit-spi W=$OBJ/nvenc
   export_tree "$F" "$W" src vt; mkdir -p "$OUT/bundle" "$W/o"; : > "$LOGS/nvenc.log"
@@ -658,7 +667,7 @@ stage_usbkeeper() {   # USBDiskKeeper: the USB disk OpenCore starts from stays a
   say "USBDiskKeeper $(sha "$OUT/USBDiskKeeper.kext/Contents/MacOS/USBDiskKeeper")"
 }
 
-ALL="rm nvrm nvrmfb nvaccel nvrmagdc nmhda plugin translator nvk nvenc latsof nitrosense smcnvidiagpu whateverxe hybridpm applealc idisphda mtkwlan mtkbt btleadv nmappfree usbkeeper"
+ALL="rm nvrm nvrmfb nvaccel nvrmagdc nmhda plugin translator nvk dlss nvenc latsof nitrosense smcnvidiagpu whateverxe hybridpm applealc idisphda mtkwlan mtkbt btleadv nmappfree usbkeeper"
 [ $# -gt 0 ] || set -- $ALL
 for s in "$@"; do
   case " $ALL " in *" $s "*) ;; *) die "no stage $s; stages: $ALL" ;; esac

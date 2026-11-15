@@ -397,6 +397,18 @@
   },
   "nvmtl/libvulkan_nouveau.dylib": {
    "sha256": "31093d37ae73360c744f3fcd3e0cb3e6dcff3cd592d4d230a540097b9f9a3725"
+  },
+  "dlss-pkg/dlss_fetch.sh": {
+   "sha256": "01954a12152a643c3febef250a5d630bbeaac139e38cd490d2d1e30f87db34e0"
+  },
+  "dlss-pkg/dlss/dlss_cache": {
+   "sha256": "d2feabfa3fdcf323cf39704125748683c556563399c3fe1511489fcc1032768e"
+  },
+  "dlss-pkg/dlss/nm_unzstd": {
+   "sha256": "fee053117c0da105856f2700f15d6aa0d4c1173be666d91462e64138ab5f03e3"
+  },
+  "dlss-pkg/dlss/assertfail_trap.ptx": {
+   "sha256": "a95d9c58ba7bab4d1d47bca1efce25b57a9af1e301f077fb4e245d51c4ccec38"
   }
  }
 }

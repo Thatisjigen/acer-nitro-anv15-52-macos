@@ -33,6 +33,7 @@ OpenCore EFI and post-install scripts for the Acer Nitro ANV15-52: macOS Tahoe w
 | HDR | ✅ | Over USB-C, and HDR10 over HDMI on the RTX: 1080p up to 144 Hz, and 4K at 60 Hz in YCbCr 4:2:2 when RGB at 10 bits is beyond the monitor's HDMI clock |
 | Monitor control over DDC/CI | ✅ | A monitor on the RTX's HDMI: its brightness is read. Setting it from an app was not tried |
 | Sleep and wake | ✅ | With the RTX on. Tested with the real NVRAM, not yet with the [emulated NVRAM](#nvram) of the `full` profile |
+| DLSS 4 | ❔ | Installed by default, for games that use MetalFX's temporal scaler; not tried in a game yet ([DLSS](#dlss-4)) |
 | Video decoding on the RTX | ✅ | H.264, VP9, AV1 in Chrome; H.264, HEVC, VP9 in Safari too, not AV1 ([Safari video](#safari-video-on-the-rtx)) |
 | Protected video, Firefox | ✅ | Widevine test streams up to 4K. Netflix not tried yet |
 | Protected video, Chrome | ✅ | Widevine, Netflix included, with [NMAppFree](#chrome-and-nmappfree) |
@@ -116,6 +117,16 @@ The other modes are in [its README](https://github.com/Thatisjigen/NMAppFree#mod
 ## Safari video on the RTX
 
 With `-wex-nv-video` in the boot-args, Safari's GPU process (`com.apple.WebKit.GPU`) decodes **H.264, HEVC and VP9** on the RTX, through the NVIDIA runtime's video decoders (`libnvencvt`) that a WhateverXe rule lets that process map. A 4K H.264 clip plays at about a fifth of the CPU a software decoder takes. AV1 stays off: 10-bit AV1 decodes wrong on this Blackwell GPU, so it is refused rather than shown wrong. Tested on YouTube up to 2160p.
+
+## DLSS 4
+
+NullMoth's Metal plugin can run NVIDIA's DLSS behind MetalFX's temporal scaler: a game that asks MetalFX to upscale its frames gets DLSS on the RTX instead. It needs NVIDIA's own files, which this repository does not carry. The last step of `install`, `dlss`, runs NullMoth's `dlss_fetch.sh`, compiled by `build` from the NVIDIA fork:
+
+- it downloads **about 750 MB** from NVIDIA's public sites: the DLSS SDK 310.9.16 runtimes from GitHub NVIDIA/DLSS, NVIDIA's Linux driver 620.70.06 for its NGX library, and nvJitLink 12.9.86 from PyPI, so `install` needs the network and 2.5 GB free in `/var/tmp`;
+- it refuses any file whose SHA-256 is not the one pinned in the script, then builds the GPU kernels for the card it finds (sm_120 for the RTX 5050) in `/Library/NullMoth/dlss`, in a few minutes. It runs as root, from a private copy of the build that `install` checks first;
+- **the files stay under NVIDIA's licences** (DLSS SDK, driver, CUDA): they are downloaded on your Mac and must not be published.
+
+On the test machine the files and 259 kernels for sm_120 were installed this way; no game has been tried with them yet. To leave it out: `install --go --skip dlss`. To take it out later: `sudo rm -rf /Library/NullMoth/dlss`; without that folder the plugin works as before. A game reads it when it starts: no reboot.
 
 ## NVRAM
 

@@ -52,6 +52,9 @@ NVMTL_CONF = GB + '/nvmtl/nvrm610.conf'
 # The processes that load libnvencvt to decode on the RTX: Safari's GPU process, where WhateverXe lets it map the library. The Aerial
 # wallpaper and its preview are left out: nvwallpaper=1 on the boot line adds them in the plugin, and without it they keep Apple's decoders
 NVENCVT_LINE = 'NVMTL_NVENCVT=com.apple.WebKit.GPU'
+# DLSS 4: what NullMoth's dlss_fetch.sh writes, NVIDIA's files and the GPU kernels built from them. The Metal plugin looks for it when a game starts
+DLSS = '/Library/NullMoth/dlss'
+DLSS_FREE = 2.5e9   # dlss_fetch.sh stops below this in /var/tmp
 NVFW = '/Library/NullMoth/nvfw'   # where NullMoth's installer puts NVIDIA's GSP firmware
 PANEL_OVERRIDE = '/Library/Displays/Contents/Resources/Overrides/DisplayVendorID-e77/DisplayProductID-1513'
 # What NullMoth's installer writes beside the driver and the tested machine does not have: a job that gives the internal panel's brightness
@@ -70,7 +73,9 @@ ARTIFACTS = ['NVRM.kext/Contents/MacOS/NVRM', 'NVRMFB.kext/Contents/MacOS/NVRMFB
              'WhateverXe.kext/Contents/MacOS/WhateverXe', 'HybridPM.kext/Contents/MacOS/HybridPM', 'AppleALC.kext/Contents/MacOS/AppleALC',
              'IDispHDA.kext/Contents/MacOS/IDispHDA', 'AirportMtkWlan.kext/Contents/MacOS/AirportMtkWlan',
              'SimpleMtkBtPatcher.kext/Contents/MacOS/SimpleMtkBtPatcher', 'BTLEAdvFixup.kext/Contents/MacOS/BTLEAdvFixup', 'NMAppFree.kext/Contents/MacOS/NMAppFree',
-             'USBDiskKeeper.kext/Contents/MacOS/USBDiskKeeper']
+             'USBDiskKeeper.kext/Contents/MacOS/USBDiskKeeper',
+             # not a driver: what install runs to download and prepare DLSS
+             'dlss-pkg/dlss_fetch.sh', 'dlss-pkg/dlss/dlss_cache', 'dlss-pkg/dlss/nm_unzstd', 'dlss-pkg/dlss/assertfail_trap.ptx']
 # Which forks each compiled file comes from. SMCNvidiaGPU is built with NVRM, so both count
 ARTIFACT_FORKS = {
     'NVRM.kext/Contents/MacOS/NVRM': ['nvidia-macos-driver'], 'NVRMFB.kext/Contents/MacOS/NVRMFB': ['nvidia-macos-driver'],
@@ -85,6 +90,8 @@ ARTIFACT_FORKS = {
     'SimpleMtkBtPatcher.kext/Contents/MacOS/SimpleMtkBtPatcher': ['SimpleMtkBtFw'], 'BTLEAdvFixup.kext/Contents/MacOS/BTLEAdvFixup': ['ForbiddenItlwm'],
     'NMAppFree.kext/Contents/MacOS/NMAppFree': ['NMAppFree'],
     'USBDiskKeeper.kext/Contents/MacOS/USBDiskKeeper': ['USBKeeper'],
+    'dlss-pkg/dlss_fetch.sh': ['nvidia-macos-driver'], 'dlss-pkg/dlss/dlss_cache': ['nvidia-macos-driver'], 'dlss-pkg/dlss/nm_unzstd': ['nvidia-macos-driver'],
+    'dlss-pkg/dlss/assertfail_trap.ptx': ['nvidia-macos-driver'],
 }
 COMPILED_FOR_EFI = ['NMHDA', 'NitroEC', 'SMCNvidiaGPU', 'WhateverXe', 'HybridPM', 'AppleALC', 'IDispHDA', 'AirportMtkWlan', 'SimpleMtkBtPatcher', 'BTLEAdvFixup', 'NMAppFree',
                     'USBDiskKeeper']
@@ -650,7 +657,58 @@ class NitroSense(Step):
         return None if os.path.isdir(c.p(NITRO_APP)) else 'NitroSense.app was not copied'
 
 
-STEPS = [NullMoth, Graphics, NvrmKexts, Plugin, Decoder, Nvk, MetalCache, LatSOF, PanelHiDPI, AuxKC, NitroSense]
+class Dlss(Step):
+    name = 'dlss'
+    what = ('DLSS 4 behind the MetalFX temporal scaler: NullMoth\'s dlss_fetch.sh downloads about 750 MB of NVIDIA\'s files from NVIDIA\'s sites, '
+            'refuses any whose hash is not the one pinned in it, and builds the GPU kernels for this card in /Library/NullMoth/dlss. '
+            'The files stay under NVIDIA\'s licences. --skip dlss leaves it out')
+    touches = [DLSS]
+    needs_out = ['dlss-pkg/dlss_fetch.sh', 'dlss-pkg/dlss/dlss_cache', 'dlss-pkg/dlss/nm_unzstd', 'dlss-pkg/dlss/assertfail_trap.ptx']
+
+    def detail(self):
+        return ['needs the network while install runs, and a few minutes: about 750 MB from GitHub NVIDIA/DLSS, download.nvidia.com and PyPI. '
+                'No reboot: a game reads it when it starts. To take it out later: sudo rm -rf /Library/NullMoth/dlss']
+
+    def preflight(self):
+        if self.ctx.fake:
+            return []
+        free = shutil.disk_usage('/private/var/tmp').free
+        return [] if free > DLSS_FREE else [f'{free / 1e9:.1f} GB free in /var/tmp, where dlss_fetch.sh works: it needs 2.5 GB']
+
+    def run(self):
+        c = self.ctx
+        # Run by root, dlss_fetch.sh wants its folder, its tools and itself owned by root and writable by root only: a private copy, checked
+        # against the build. Outside the build folder, which the user can write
+        copy = tempfile.mkdtemp(prefix='anv15-52-dlss.', dir=None if c.fake else '/private/var/tmp')
+        try:
+            subprocess.run(['/usr/bin/ditto', '--norsrc', '--noextattr', str(c.out / 'dlss-pkg'), copy], check=True)
+            if not c.fake:
+                subprocess.run(['/usr/sbin/chown', '-R', 'root:wheel', copy], check=True)
+            subprocess.run(['/bin/chmod', '-R', 'go-w', copy], check=True)
+            os.chmod(copy, 0o755)
+            built = c.out_manifest()['files']
+            for rel in self.needs_out:
+                if sha256(os.path.join(copy, rel.split('/', 1)[1])) != built[rel]:
+                    raise Stop(f'the private copy of {rel} is not the build')
+            if c.fake:   # it writes to the /Library of the running system and downloads: never on a copy of the system tree
+                print('   tools copied and checked; dlss_fetch.sh not run on a copy of the system tree')
+                return
+            c.run([copy + '/dlss_fetch.sh', '--yes'])
+        finally:
+            shutil.rmtree(copy, ignore_errors=True)
+
+    def check(self):
+        if self.ctx.fake:
+            return None
+        try:
+            manifest = Path(self.ctx.p(DLSS + '/manifest.txt')).read_text()
+        except OSError:
+            return 'dlss_fetch.sh left no manifest.txt'
+        kernels = re.search(r'^kernels: (\d+)$', manifest, re.M)
+        return None if kernels and int(kernels.group(1)) > 0 else 'no GPU kernel was built for DLSS'
+
+
+STEPS = [NullMoth, Graphics, NvrmKexts, Plugin, Decoder, Nvk, MetalCache, LatSOF, PanelHiDPI, AuxKC, NitroSense, Dlss]
 
 
 # ---------------------------------------------------------------- backups
@@ -658,6 +716,10 @@ STEPS = [NullMoth, Graphics, NvrmKexts, Plugin, Decoder, Nvk, MetalCache, LatSOF
 def open_backup(ctx):
     stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
     ctx.backup = Path(ctx.p(f'{STATE_DIR}/backup-{stamp}'))
+    n = 1
+    while ctx.backup.exists():   # a rollback leaves its copies: an install again within the same second gets a folder of its own
+        ctx.backup = Path(ctx.p(f'{STATE_DIR}/backup-{stamp}-{n}'))
+        n += 1
     (ctx.backup / 'files').mkdir(parents=True)
     if not ctx.fake:
         os.chmod(ctx.backup, 0o700)
@@ -1165,6 +1227,11 @@ def cmd_verify(ctx):
     print(f'      WindowServer started {server}: a logout does not restart it here, so anything it loads needs a reboot')
     gpu = subprocess.run(['/usr/sbin/sysctl', '-n', 'kern.nvgpustate'], capture_output=True, text=True).stdout.strip()
     print(f'      kern.nvgpustate: {gpu or "no answer: SMCNvidiaGPU is not bound"}')
+    try:
+        dlss = dict(re.findall(r'^(sm|kernels): (\S+)$', Path(DLSS + '/manifest.txt').read_text(), re.M))
+        print(f'      DLSS: sm_{dlss.get("sm", "?")}, {dlss.get("kernels", "?")} GPU kernels in {DLSS}')
+    except OSError:
+        print(f'      DLSS: not installed, no {DLSS}/manifest.txt (install --skip dlss, or taken out)')
     daemon = subprocess.run(['/bin/launchctl', 'print', 'system/com.nitrosense.nitrod'], capture_output=True, text=True)
     line(daemon.returncode == 0 and 'state = running' in daemon.stdout, 'nitrod running')
     print(f'{bad} line(s) failed. This says what is loaded, not that it is stable: the status table in README.md lists what to try by hand.')
