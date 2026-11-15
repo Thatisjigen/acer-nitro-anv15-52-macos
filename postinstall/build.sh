@@ -316,6 +316,13 @@ stage_nvk() { (   # in a subshell: the toolchain of NVK stays out of the stages 
   cp "$P/curves/curve_math.h" "$S/src/nouveau/vulkan/nvk_curve_math.h"
   sed 's/#include "curve_math.h"/#include "nvk_curve_math.h"/' "$P/curves/curve_nir.h" > "$S/src/nouveau/vulkan/nvk_curve_nir.h"
   ln -s "$O/ogkm" "$S/src/nouveau/vulkan/nvkmd/nvrm/open-gpu-kernel-modules"
+  # four commits of Mesa main for NAK, NVK's shader compiler, on SM120 (the RTX 50 series), after NullMoth's chain, as Mesa published
+  # them with their authors: the latency generator change they need first, a missing scoreboard for uniform Ldcg, the ready cycle of
+  # the prepass scheduler and the imma/hmma latencies
+  for f in "$HERE"/nvk-mesa/*.patch; do
+    o=$(patch -p1 --verbose --no-backup-if-mismatch -F0 -d "$S" < "$f" 2>&1) || { echo "$o" | tail -5; die "$f does not apply"; }
+    echo "$o" >> "$LOGS/nvk-patches.log"; ! grep -q -i fuzz <<< "$o" || die "$f applies only with fuzz"
+  done
   python3 -I "$P/dlss/patch_dlss_cache.py" "$S" > /dev/null || die "patch_dlss_cache.py"
   [ -z "$(find "$S" -name '*.orig' -o -name '*.rej')" ] || die "patch left .orig or .rej files"
   # mesa_clc and vtn_bindgen2 precompile NVK's internal CL shaders: from this same tree, built by Apple's clang (meson's cc for native

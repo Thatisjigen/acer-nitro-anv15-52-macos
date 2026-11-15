@@ -32,7 +32,7 @@ OpenCore EFI and post-install scripts for the Acer Nitro ANV15-52: macOS Tahoe w
 | Three displays | ✅ | Panel, USB-C, HDMI |
 | HDR | ✅ | Over USB-C, and HDR10 over HDMI on the RTX: 1080p up to 144 Hz, and 4K at 60 Hz in YCbCr 4:2:2 when RGB at 10 bits is beyond the monitor's HDMI clock |
 | Monitor control over DDC/CI | ✅ | A monitor on the RTX's HDMI: its brightness is read. Setting it from an app was not tried |
-| Sleep and wake | ✅ | With the RTX on. Tested with the real NVRAM, not yet with the [emulated NVRAM](#nvram) of the `full` profile |
+| Sleep and wake | ✅ | With the RTX on. The monitor on the RTX lights up again also when the GPU's wake work comes before the framebuffer's power-on (GeekAudio's fix). Tested with the real NVRAM, not yet with the [emulated NVRAM](#nvram) of the `full` profile |
 | DLSS 4 | ❔ | Installed by default, for games that use MetalFX's temporal scaler; not tried in a game yet ([DLSS](#dlss-4)) |
 | Video decoding on the RTX | ✅ | H.264, VP9, AV1 in Chrome; H.264, HEVC, VP9 in Safari too, not AV1 ([Safari video](#safari-video-on-the-rtx)) |
 | Protected video, Firefox | ✅ | Widevine test streams up to 4K. Netflix not tried yet |
@@ -142,8 +142,8 @@ For the real NVRAM, to catch a panic or to update: in `UEFI` › `Drivers` disab
 
 ## Known issues
 
-- **Intel GPU resets:** in about one boot out of three the Intel blitter hangs and resets over and over, and everything slows down for some minutes. Cause unknown.
-- **A panic when the Intel GPU stops answering:** seen twice with WhateverXe 0.8.2, under a heavy build and with the Aerial screensaver: the DEBUG build stopped at its check of the command streamer's status buffer. The build pinned here re-arms that buffer instead, at most once a second; it has not been needed yet.
+- **Intel GPU resets:** in about one boot out of three the Intel blitter hangs and resets over and over, and everything slows down for some minutes. Cause unknown. WhateverXe now keeps its command streamer's status buffer in step with the hardware, so a reset of the second render ring or an entry written late no longer loses an event, and it completes the stamps of replayed work that hangs again, every 30 s, instead of leaving a display waiting forever.
+- **A panic when the Intel GPU cannot be recovered:** when 10 of the last 15 minutes carry a restart request from IOAccel, WhateverXe panics on purpose, so the machine restarts instead of freezing about half an hour later with nothing in any log. `-wex-no-gpu-panic` turns it off. A status-buffer event the native scheduler expects, an element switch within one context, is dispatched instead of ending in a panic: Julian Buhagiar's fix for Alder Lake, kept here. The state is in the registry root as `WEXGPUWatch`, because the log cannot decode a kext OpenCore injects.
 - **Do not sleep with `-nvoff`:** the one try without the RTX ended in a watchdog panic.
 - **4K at 60 Hz over HDMI goes out at 59.94 Hz:** the driver takes the first variant of the monitor's mode. At 60 Hz the HiDPI desktop that looks like 1920×1080 uses a 1080p signal; 4K at 60 Hz is shown at its own size.
 - **A monitor on HDMI can look too dark:** macOS gives it gamma 1.961. Choose the profile `sRGB IEC61966-2.1` in System Settings › Displays.
@@ -156,7 +156,7 @@ For the real NVRAM, to catch a panic or to update: in `UEFI` › `Drivers` disab
 
 ## Credits
 
-[b00t0x](https://github.com/b00t0x/WhateverXe) for WhateverXe, [nullmoth](https://github.com/nullmoth/nvidia-macos-driver) for the NVIDIA driver, [acidanthera](https://github.com/acidanthera) for OpenCore, Lilu, VirtualSMC and AppleALC, and [mickys](https://github.com/mickys/nvenc), [ptnzzn](https://github.com/ptnzzn/NitroSense-macOS), [zzzyy678](https://github.com/zzzyy678/SMCNvidiaGPU), [pokipoi](https://github.com/pokipoi/LatSOF-Audio), [JulioNectar](https://github.com/JulioNectar/Hackintosh-XPS13Plus-IrisXe-Tahoe) for XE-PM, [kitsuneislife](https://github.com/kitsuneislife), [e5u](https://github.com/e5u/SimpleMtkWlan) and [flxxxxddd](https://github.com/flxxxxddd/SimpleMtkBtFw) for the MediaTek Wi-Fi and Bluetooth, the Linux mt76 driver, HighDelay, retropineaple, Dino-VN, Dat Nguyen and many others.
+[b00t0x](https://github.com/b00t0x/WhateverXe) for WhateverXe, [nullmoth](https://github.com/nullmoth/nvidia-macos-driver) for the NVIDIA driver, [acidanthera](https://github.com/acidanthera) for OpenCore, Lilu, VirtualSMC and AppleALC, and [mickys](https://github.com/mickys/nvenc), [ptnzzn](https://github.com/ptnzzn/NitroSense-macOS), [zzzyy678](https://github.com/zzzyy678/SMCNvidiaGPU), [pokipoi](https://github.com/pokipoi/LatSOF-Audio), [JulioNectar](https://github.com/JulioNectar/Hackintosh-XPS13Plus-IrisXe-Tahoe) for XE-PM, [kitsuneislife](https://github.com/kitsuneislife), [e5u](https://github.com/e5u/SimpleMtkWlan) and [flxxxxddd](https://github.com/flxxxxddd/SimpleMtkBtFw) for the MediaTek Wi-Fi and Bluetooth, the Linux mt76 driver, HighDelay, retropineaple, Dino-VN, Dat Nguyen, GeekAudio, kevineduardo, Ghltbm, Julian Buhagiar, Axel Gneiting and Mel Henning of Mesa, and many others.
 
 ## License
 

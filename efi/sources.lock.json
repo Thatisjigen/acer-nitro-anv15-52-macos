@@ -347,7 +347,7 @@
    },
    "WhateverXe": {
     "compiled": true,
-    "tested_binary_sha16": "e5db6e4704d65a5d"
+    "tested_binary_sha16": "6d3a19937be38221"
    },
    "XHCI-unsupported": {
     "local": "efi/kexts/XHCI-unsupported.kext",

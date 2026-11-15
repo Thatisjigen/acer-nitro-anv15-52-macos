@@ -31,6 +31,7 @@ URLs and hashes are in [efi/sources.lock.json](../efi/sources.lock.json) and [po
 | NVIDIA DLSS SDK 310.9.16 runtimes, NGX 620.70.06, nvJitLink 12.9.86 | NVIDIA DLSS SDK licence, NVIDIA driver licence, CUDA EULA | Downloaded by NullMoth's `dlss_fetch.sh` on your Mac during `install`, each checked against a pinned SHA-256, into `/Library/NullMoth/dlss` with the GPU kernels built from them. Never published here; do not publish that folder |
 | Sound Open Firmware firmware | Intel license | Downloaded, embedded in the kext on your machine. Do not publish that kext without reading `LICENCE.Intel` |
 | open-gpu-kernel-modules | MIT and GPL-2.0 | Downloaded to compile NVRM, and its 610.57.04 headers for NVK |
+| Four commits of Mesa `main` for NAK (`postinstall/nvk-mesa/`) | MIT | The patches as Mesa published them, with their authors, Axel Gneiting and Mel Henning; applied by the `nvk` stage after the fork's chain |
 | Mesa 26.3.0-rc3 (`90a959eb`) | MIT for NVK, the rest as each file says | Downloaded to compile NVK with the patches of the NVIDIA fork. NAK's Rust crates come from crates.io through Mesa's `.wrap` files; the fork lists their licences in `licenses/nvk-rust-crates.txt` |
 | LLVM and clang 22.1.8, SPIRV-LLVM-Translator 22.1.7 | Apache-2.0 with LLVM exceptions | Sources downloaded and compiled on your machine, only to build NVK |
 | glslang, SPIRV-Tools, SPIRV-Headers | BSD-3-Clause, Apache-2.0, MIT | Sources downloaded and compiled on your machine, only to build NVK |

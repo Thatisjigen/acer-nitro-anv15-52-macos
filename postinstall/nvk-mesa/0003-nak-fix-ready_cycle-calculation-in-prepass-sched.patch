@@ -1,0 +1,68 @@
+From b6b973d02329c6aa0961fc11ae96293f73fa7892 Mon Sep 17 00:00:00 2001
+From: Mel Henning <mhenning@darkrefraction.com>
+Date: Tue, 20 Oct 2026 13:09:16 -0400
+Subject: [PATCH] nak: Fix ready_cycle calculation in prepass sched
+
+The graph's ready_cycle is incorrect. Use the one from dep_instr
+instead.
+
+Totals:
+CodeSize: 4725910336 -> 4769266016 (+0.92%); split: -0.13%, +1.05%
+PSO wall duration (ns): 8120416076384 -> 8131472806921 (+0.14%); split: -2.48%, +2.61%
+Number of GPRs: 12361717 -> 12553042 (+1.55%); split: -0.70%, +2.25%
+SLM Size: 5298656 -> 5297324 (-0.03%); split: -0.04%, +0.01%
+Static cycle count: 13439179722 -> 12748493000 (-5.14%); split: -5.43%, +0.29%
+Spills to memory: 7044239 -> 7055696 (+0.16%); split: -0.04%, +0.20%
+Fills from memory: 6830345 -> 6811538 (-0.28%); split: -0.29%, +0.02%
+Spills to reg: 1494705 -> 1542273 (+3.18%); split: -0.19%, +3.37%
+Fills from reg: 1297347 -> 1324197 (+2.07%); split: -0.07%, +2.14%
+Max warps/SM: 7773544 -> 7750160 (-0.30%); split: +0.26%, -0.56%
+
+Totals from 206049 (100.00% of 206054) affected shaders:
+CodeSize: 4725910160 -> 4769265840 (+0.92%); split: -0.13%, +1.05%
+PSO wall duration (ns): 8120416056604 -> 8131472787141 (+0.14%); split: -2.48%, +2.61%
+Number of GPRs: 12361597 -> 12552922 (+1.55%); split: -0.70%, +2.25%
+SLM Size: 5298656 -> 5297324 (-0.03%); split: -0.04%, +0.01%
+Static cycle count: 13439179691 -> 12748492969 (-5.14%); split: -5.43%, +0.29%
+Spills to memory: 7044239 -> 7055696 (+0.16%); split: -0.04%, +0.20%
+Fills from memory: 6830345 -> 6811538 (-0.28%); split: -0.29%, +0.02%
+Spills to reg: 1494705 -> 1542273 (+3.18%); split: -0.19%, +3.37%
+Fills from reg: 1297347 -> 1324197 (+2.07%); split: -0.07%, +2.14%
+Max warps/SM: 7773304 -> 7749920 (-0.30%); split: +0.26%, -0.56%
+
+Co-authored-by: Thomas H.P. Andersen <phomes@gmail.com>
+Assisted-by: LLM
+Reviewed-by: Karol Herbst <kherbst@redhat.com>
+Reviewed-by: Mary Guillemard <mary@mary.zone>
+Part-of: <https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/45454>
+---
+ src/nouveau/compiler/nak/opt_instr_sched_prepass.rs | 13 +++++++++++--
+ 1 file changed, 11 insertions(+), 2 deletions(-)
+
+diff --git a/src/nouveau/compiler/nak/opt_instr_sched_prepass.rs b/src/nouveau/compiler/nak/opt_instr_sched_prepass.rs
+index e08674214246..662f6acbe721 100644
+--- a/src/nouveau/compiler/nak/opt_instr_sched_prepass.rs
++++ b/src/nouveau/compiler/nak/opt_instr_sched_prepass.rs
+@@ -579,8 +579,17 @@ impl<'a> GenerateOrder<'a> {
+                 );
+                 dep_instr.num_uses -= 1;
+                 if dep_instr.num_uses <= 0 {
+-                    future_ready_instrs
+-                        .insert(FutureReadyInstr::new(g, edge.head_idx));
++                    let label = &g.nodes[edge.head_idx].label;
++                    // dep_instr.ready_cycle is the earliest beginning cycle for the
++                    // instruction, but we need the earliest end cycle for the instruction.
++                    let ready_cycle = dep_instr
++                        .ready_cycle
++                        .saturating_sub(label.exec_latency);
++
++                    future_ready_instrs.insert(FutureReadyInstr {
++                        ready_cycle: Reverse(ready_cycle),
++                        index: edge.head_idx,
++                    });
+                 }
+             }
+ 
+-- 
+GitLab
+

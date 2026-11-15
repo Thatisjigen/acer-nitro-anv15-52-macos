@@ -26,6 +26,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 ALLOWED_ADDRESS = {'55486333+Thatisjigen@users.noreply.github.com', 'noreply@anthropic.com'}
+# The authors and reviewers named in the four Mesa commits of postinstall/nvk-mesa, as Mesa published them
+UPSTREAM_ADDRESSES = {'mhenning@darkrefraction.com', 'axel@0m.dev', 'kherbst@redhat.com', 'airlied@redhat.com', 'mary@mary.zone',
+                      'phomes@gmail.com'}
 BINARIES_ALLOWED = re.compile(r'^efi/acpi/SSDT-[A-Za-z-]+\.aml$')
 # GUIDs of OpenCore and Apple, OpenCore's sample identity, and the WMI interfaces of the Acer firmware named in SSDT-NITRO
 UUIDS_ALLOWED = {'7c436110-ab2a-4bbb-a880-fe41995c9f82', '4d1fda02-38c7-4a6a-9cc6-4bcca8b30102', '8be4df61-93ca-11d2-aa0d-00e098032b8c',
@@ -125,7 +128,8 @@ def shape_hits(data):
             text = m.group(0).decode('latin-1').lower()
             if kind == 'UUID' and text in UUIDS_ALLOWED:
                 continue
-            if kind == 'e-mail address' and (text in {a.lower() for a in ALLOWED_ADDRESS} or text.endswith(('@example.com', '@apple.com'))):
+            if kind == 'e-mail address' and (text in {a.lower() for a in ALLOWED_ADDRESS} | UPSTREAM_ADDRESSES
+                                             or text.endswith(('@example.com', '@apple.com'))):
                 continue
             if kind == 'MAC address' and text in PLACEHOLDERS:
                 continue

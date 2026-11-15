@@ -1,0 +1,29 @@
+From 3b3084bf2661153acbb486e6f491b49deee8c6e4 Mon Sep 17 00:00:00 2001
+From: Mel Henning <mhenning@darkrefraction.com>
+Date: Mon, 26 Oct 2026 16:36:37 -0400
+Subject: [PATCH] nak: Derive copy and clone in lat_rs_gen
+
+Reviewed-by: Karol Herbst <kherbst@redhat.com>
+Reviewed-by: Dave Airlie <airlied@redhat.com>
+Reviewed-by: Mary Guillemard <mary@mary.zone>
+Part-of: <https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/45454>
+---
+ src/nouveau/compiler/latencies/lat_rs_gen.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/nouveau/compiler/latencies/lat_rs_gen.py b/src/nouveau/compiler/latencies/lat_rs_gen.py
+index 8b35e1bdb06f..5d35fff87265 100644
+--- a/src/nouveau/compiler/latencies/lat_rs_gen.py
++++ b/src/nouveau/compiler/latencies/lat_rs_gen.py
+@@ -30,7 +30,7 @@ const fn pred(has_pred: bool, a: u32, b: u32) -> u32 {
+ 
+ % for reg_file, cats in file_cats.items():
+ <% enum_name = to_camel(reg_file) + 'Latency' + sm.upper() %>
+-#[derive(PartialEq)]
++#[derive(Copy, Clone, PartialEq)]
+ pub enum ${enum_name} {
+ % for category in cats[0].header.cats:
+    ${to_camel(category)},
+-- 
+GitLab
+

@@ -88,7 +88,7 @@ Also present and disabled, because at boot they find nothing on this laptop: SMC
 | `nvfbkeepfront=1` | NVRMFB | The frame stays on screen across a mode change. Not judged yet |
 | `nvfbvrr=1` | NVRMFB | Variable refresh, when the monitor offers it. Not testable here: the monitor gives no VRR range over HDMI |
 
-On in the kexts themselves, each with a boot-arg that turns it off: the framebuffer, accelerator and four heads of the RTX; in WhateverXe the recovery from GPU hangs (`-wex-no-reset-recover`), coherent scanout and the larger display buffer that scaled modes need (`-wex-no-scanout-coherent`, `-wex-no-hidpi-dbuf`), the HDR switch for a monitor on USB-C (`-wex-no-hdr-modes`, `-wex-no-hdr-sgx`); HybridPM's turbo (`-nohpm`) and its autonomous clock (`hpmauto=0`); Wi-Fi 6 on the MT7920 (`-mtknohe`).
+On in the kexts themselves, each with a boot-arg that turns it off: the framebuffer, accelerator and four heads of the RTX; in WhateverXe the recovery from GPU hangs (`-wex-no-reset-recover`) and the panic when the GPU stays hung for 10 of 15 minutes (`-wex-no-gpu-panic`), coherent scanout and the larger display buffer that scaled modes need (`-wex-no-scanout-coherent`, `-wex-no-hidpi-dbuf`), the HDR switch for a monitor on USB-C (`-wex-no-hdr-modes`, `-wex-no-hdr-sgx`); HybridPM's turbo (`-nohpm`) and its autonomous clock (`hpmauto=0`); Wi-Fi 6 on the MT7920 (`-mtknohe`).
 
 ## NVRAM of the `full` profile
 

@@ -1,0 +1,43 @@
+From 801952de2f174558c24f4536b74f06277df78058 Mon Sep 17 00:00:00 2001
+From: Axel Gneiting <axel@0m.dev>
+Date: Thu, 29 Oct 2026 11:52:20 -0700
+Subject: [PATCH] nak: Fix missing scoreboard for uniform Ldcg on SM120
+
+The SM120 uniform register latency table puts Ldcg with
+the other memory ops as decoupled. For uniform ops,
+decoupled is replaced with Udp, which is fixed latency
+and doesn't get a scoreboard. Ldcg reads memory through
+the constant cache, so its latency isn't fixed. A user
+of the result can read the register before the load is
+done, e.g. an Ldcg using the address loaded by another
+Ldcg.
+
+Classify Ldcg as ToUr like uniform Ldc.
+
+Fixes: 950465bdecd ("nak: add Ldcg")
+Reviewed-by: Karol Herbst <kherbst@redhat.com>
+Part-of: <https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/45762>
+---
+ src/nouveau/compiler/nak/sm120_instr_latencies.rs | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/nouveau/compiler/nak/sm120_instr_latencies.rs b/src/nouveau/compiler/nak/sm120_instr_latencies.rs
+index 32c70014b5bc..e56b91b5d64c 100644
+--- a/src/nouveau/compiler/nak/sm120_instr_latencies.rs
++++ b/src/nouveau/compiler/nak/sm120_instr_latencies.rs
+@@ -255,11 +255,11 @@ fn op_ureg_latency(
+         Op::ALd(_)
+         | Op::ASt(_)
+         | Op::Ld(_)
+-        | Op::Ldcg(_)
+         | Op::Ldsm(_)
+         | Op::St(_)
+         | Op::Atom(_) => decoupled,
+         Op::SuLd(_) | Op::SuSt(_) | Op::SuAtom(_) => decoupled,
++        Op::Ldcg(_) => ToUr,
+         Op::Ldc(_) => {
+             if uniform_op {
+                 ToUr
+-- 
+GitLab
+
