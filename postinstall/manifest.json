@@ -29,7 +29,7 @@
    "url": "https://github.com/Thatisjigen/nvenc.git",
    "ref": "acer/current",
    "license": "MIT",
-   "tested_commit": "346a4499881d96880f4d06166f5a094179a74836"
+   "tested_commit": "7fbaa7b19ff5dc4d6bfc1a85d2db8ef436bcac6c"
   },
   "NitroSense-macOS": {
    "url": "https://github.com/Thatisjigen/NitroSense-macOS.git",
@@ -41,7 +41,7 @@
    "url": "https://github.com/Thatisjigen/SMCNvidiaGPU.git",
    "ref": "acer/current",
    "license": "MIT",
-   "tested_commit": "b54585f7217ed39b9682ce599c5be9950e81c311"
+   "tested_commit": "10b25ea70e4fb95ba8dbb971bf10c93c41414aaa"
   },
   "LatSOF-Audio": {
    "url": "https://github.com/Thatisjigen/LatSOF-Audio.git",
@@ -64,7 +64,7 @@
   "SimpleMtkWlan": {
    "url": "https://github.com/Thatisjigen/SimpleMtkWlan.git",
    "ref": "acer/current",
-   "tested_commit": "b909dc25603978cd7d7648175c5706cb2ad33efa",
+   "tested_commit": "a5c28ac1bec4facf442ce295d216195289adf85a",
    "license": "GPL-2.0"
   },
   "SimpleMtkBtFw": {
@@ -271,7 +271,7 @@
   "MKSDK_COMMIT": "3f750085caa17ec3a7880f11c11bf4f48cd6a164",
   "OGKM_COMMIT": "e6a2e01579fbbd1ca2ed43fef2ee2589e9bd8bd9",
   "NVKMS_DATE": "Tue Nov 10 13:47:05 CET 2026",
-  "NVENC_VERSION": "v0.9.5-g346a449",
+  "NVENC_VERSION": "v0.9.5-g7fbaa7b",
   "NMHDA_DATE": "2026-11-01",
   "WHATEVERXE_DATE": "2026-11-14",
   "IDISPHDA_DATE": "2026-11-05",
@@ -330,9 +330,9 @@
    "reference_sha256": "9e77e0b6e765ac0196246b740f0912d15ec3816090bb0568678c3d6fbd73376d"
   },
   "bundle/libnvencvt.dylib": {
-   "sha256": "af493e3ad63a227af02425d97672b4498078fe44e60ed86d30f0ce2c1bb7e852",
-   "note": "same code; what runs was built before one log line lost a code of the work log, with another version string and another internal name",
-   "reference_sha256": "8579eba6b1ecb01f653682f2e48df9990b39006900dcc6131e0e3268ac44da4a"
+   "sha256": "4b03878899be9890aba3df2c37b45f630b982dd5df366c6bd688e78c9ac05144",
+   "note": "same code; what runs was built by a script of its own, with another version string and another internal name, before one log line lost a code of the work log",
+   "reference_sha256": "5c424a29c85857f2f148fd272f5a38b75393385ee5daf28009f9ff22c2aae9b1"
   },
   "LatSOFAudio.kext/Contents/MacOS/LatSOFAudio": {
    "sha256": "afeba8ac01d5207c926629fccc2747fd8e1588b68830cc4d0b3159a4d6b084d2"
@@ -356,7 +356,7 @@
    "reference_sha256": "61f22c3ab0ce6f464b740b6c7e7e6da67fdf78c061c00f57011c58e58ab52781"
   },
   "SMCNvidiaGPU.kext/Contents/MacOS/SMCNvidiaGPU": {
-   "sha256": "859ad651b80caeee55aa5d39a8cf22def0b2c0c63ff6b116a93f6a443edd1f4a"
+   "sha256": "8605ca5504a62a895fc60b7fd72de543d7f21d0f9da52fc001f065dfd5bfc5c8"
   },
   "WhateverXe.kext/Contents/MacOS/WhateverXe": {
    "sha256": "e5db6e4704d65a5d123fe3d5e61454e6b51f6a910c7640feaadebf88f04d52e1",
@@ -375,9 +375,9 @@
    "sha256": "d6e59bfcffcd7f9d362f42662a364eb85374b9520dc413d8971bdb79bcdee0cc"
   },
   "AirportMtkWlan.kext/Contents/MacOS/AirportMtkWlan": {
-   "sha256": "fbff2e27ab9cd6cb3730c6b1bd005369ff7dde1132dd9cbee557ba47a6139a96",
+   "sha256": "e9bd72c23c9889d7fbbc304813b689c53a6ebe31f461383d512e1d14171c9f2e",
    "note": "the one that runs carries the short commit of the local branch it was built from in its version string; built with that string it is the same file",
-   "reference_sha256": "efa1b1529befe7d673e5eccd8baa3d97014a6d4aee7e117bcd7032ed624ebc8b"
+   "reference_sha256": "0003af483074793d13282ffac771f1a15e2da71d2348178b6892afd2079d1c28"
   },
   "SimpleMtkBtPatcher.kext/Contents/MacOS/SimpleMtkBtPatcher": {
    "sha256": "1917bcab0b1e8f757e78398736e1fe209875dc27cf2b20255dfc827859c7beb0"

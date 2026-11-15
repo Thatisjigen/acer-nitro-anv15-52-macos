@@ -44,11 +44,11 @@ OpenCore EFI and post-install scripts for the Acer Nitro ANV15-52: macOS Tahoe w
 | DisplayPort audio over USB-C | ✅ | Also after a short sleep; volume and mute as for HDMI |
 | Keyboard, Fn keys, trackpad | ✅ | |
 | Webcam, USB | ✅ | |
-| Battery, charge limit, fans, sensors | ✅ | NitroSense app, and the RTX's temperatures and load in the SMC, the load taken from NVAccel's own statistics. The menu bar item is redrawn only when its text changes, and the app polls every 10 s while its window and panel are closed: WindowServer's "Invalid window" log lines went from about 45 to under 10 every 30 s |
+| Battery, charge limit, fans, sensors | ✅ | NitroSense app, and the RTX's sensors in the SMC: temperature, clock and P-state live from the GPU's shared data page, the load from NVAccel's own statistics. The menu bar item is redrawn only when its text changes, and the app polls every 10 s while its window and panel are closed: WindowServer's "Invalid window" log lines went from about 45 to under 10 every 30 s |
 | Ethernet | ✅ | The driver loads here, no cable test. Reported working on another PC with this chip |
-| Wi-Fi and Bluetooth, original MediaTek MT7920 | ✅ | Wi-Fi 6 (802.11ax), with the access point's BSS color |
+| Wi-Fi and Bluetooth, original MediaTek MT7920 | ✅ | Wi-Fi 6 (802.11ax), with the access point's BSS color. If reception stops while frames still go out, the driver reloads the firmware by itself instead of staying deaf until the next boot |
 | Wi-Fi and Bluetooth with an Intel card instead | ✅ | Swap the kexts, see [efi/README.md](efi/README.md#kexts) |
-| AirDrop | ✅ | With `-mtkawdl`, on by default. Tested with a Pixel through Quick Share: Pixel to Mac with this build, Mac to Pixel with the build just before it. Not tried with an iPhone |
+| AirDrop | ✅ | With `-mtkawdl`, on by default. AWDL's radio stays still while nothing uses it: at idle the Wi-Fi raises as many interrupts with `awdl0` up as down. Tested with a Pixel through Quick Share, with this build too. Not tried with an iPhone |
 | Handoff, Continuity | ❔ | Not tested |
 | Powering off the RTX | ❌ | About 41 W at idle |
 | Thunderbolt, FileVault, battery life | ❔ | Not tested |
@@ -91,7 +91,7 @@ On by default. Take them out of `boot-args` in your `config.plist` to go back. W
 | --- | --- |
 | `-wex-nv-video` | Safari decodes video on the RTX ([Safari video](#safari-video-on-the-rtx)) |
 | `-wex-va-renderer` | Hardware video processing on the Iris Xe, through the Intel video driver corrected for this GPU. Experimental |
-| `nvwallpaper=1` | The Aerial wallpaper decodes on the RTX |
+| `nvwallpaper=1` | The Aerial wallpaper decodes on the RTX, and its pictures are untiled there: the Iris Xe, which hung at the start of the screen saver, takes no part |
 | `-mtkawdl` | AirDrop on the MT7920: AWDL on the Wi-Fi, and the Bluetooth LE advertising that makes this Mac visible |
 | `nmhdavol=1` | Volume and mute for the audio of the displays: HDMI on the RTX, DisplayPort over USB-C |
 | `nvfb10bit=1 nvfbhdr=1` | HDR10 over HDMI on the RTX |

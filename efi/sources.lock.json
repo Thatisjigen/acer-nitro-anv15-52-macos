@@ -292,7 +292,7 @@
    },
    "SMCNvidiaGPU": {
     "compiled": true,
-    "tested_binary_sha16": "859ad651b80caeee"
+    "tested_binary_sha16": "8605ca5504a62a89"
    },
    "USBToolBox": {
     "asset": "USBToolBox-1.2.0",
@@ -426,7 +426,7 @@
    },
    "AirportMtkWlan": {
     "compiled": true,
-    "tested_binary_sha16": "fbff2e27ab9cd6cb"
+    "tested_binary_sha16": "e9bd72c23c9889d7"
    },
    "IDispHDA": {
     "compiled": true,

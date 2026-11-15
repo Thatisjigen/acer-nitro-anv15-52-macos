@@ -79,8 +79,8 @@ Also present and disabled, because at boot they find nothing on this laptop: SMC
 | `-allow3d -disablegfxfirmware` | WhateverXe | Intel acceleration |
 | `-wex-nv-video` | WhateverXe | Safari's GPU process may map the NVIDIA runtime, so Safari decodes H.264, HEVC and VP9 on the RTX |
 | `-wex-va-renderer` | WhateverXe | The Intel video driver's image conversion, corrected for this GPU: hardware video processing on the Iris Xe. Experimental |
-| `nvwallpaper=1` | NVIDIA Metal plugin | The Aerial wallpaper and its preview in Settings › Displays decode on the RTX |
-| `-mtkawdl` | AirportMtkWlan, BTLEAdvFixup | AirDrop: AWDL on the MT7920 next to the network it is joined to, and the Bluetooth LE advertising that makes this Mac visible. Tested with a Pixel through Quick Share: Pixel to Mac with this build, Mac to Pixel with the build just before it; not tried with an iPhone. Without it the Wi-Fi is the one of `acer/current` |
+| `nvwallpaper=1` | NVIDIA Metal plugin | The Aerial wallpaper and its preview in Settings › Displays decode on the RTX, and `libnvencvt` untiles their pictures there too, without the Iris Xe. Tested here: in a 2-minute screen saver the wallpaper gave the Iris Xe no work, and it did not reset |
+| `-mtkawdl` | AirportMtkWlan, BTLEAdvFixup | AirDrop: AWDL on the MT7920 next to the network it is joined to, and the Bluetooth LE advertising that makes this Mac visible. Tested with a Pixel through Quick Share, also with the build that keeps AWDL's radio still while nothing uses it; not tried with an iPhone. Without it the Wi-Fi is the one of `acer/current` |
 | `nmhdavol=1` | NMHDA | Volume and mute in macOS for the audio of every display: HDMI on the RTX, DisplayPort over USB-C. Tested here: the slider and mute change the level. At 100 the samples are untouched |
 | `nvrmaspm=1` | NVRM | Asks for PCIe ASPM L1 on the RTX's link. Nothing changes here: the port above the RTX offers no ASPM |
 | `nvrmfbddc=1` | NVRMFB | A DDC/CI bus for each monitor on the RTX, for monitor-control apps. Tested here: the brightness read from the monitor |
