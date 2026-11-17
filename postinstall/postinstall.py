@@ -31,6 +31,7 @@ import urllib.request
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
+from xml.parsers.expat import ExpatError
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
@@ -45,6 +46,8 @@ STATE_DIR = '/Library/ANV15-52'
 NVMTL = GB + '/NVMTLDriver.bundle'
 METAL = GB + '/AppleIntelTGLGraphicsMTLDriver.bundle/Contents/MacOS/AppleIntelTGLGraphicsMTLDriver'
 IMPOSTOR = GB + '/AppleIntelTGLGraphicsMTLDriver.bundle/Contents/MacOS/impostor.dylib'
+METAL_INFO = GB + '/AppleIntelTGLGraphicsMTLDriver.bundle/Contents/Info.plist'
+MPS_SWITCH = ':MPSIntelPluginFeatureList:MPSIntelPluginEnable'   # the master switch of Intel's plug-in for Metal Performance Shaders
 NITRO_DIR = '/Library/Application Support/NitroSense'
 NITRO_PLIST = '/Library/LaunchDaemons/com.nitrosense.nitrod.plist'
 NITRO_APP = '/Applications/NitroSense.app'
@@ -397,6 +400,54 @@ class Graphics(Step):
         return None
 
 
+def mps_plugin_switch(path):
+    """MPSIntelPluginEnable in the Info.plist of the Intel Metal driver; None when the file or the key is not there."""
+    try:
+        return plistlib.loads(Path(path).read_bytes())['MPSIntelPluginFeatureList']['MPSIntelPluginEnable']
+    except (OSError, ValueError, LookupError, TypeError, ExpatError):
+        return None
+
+
+class IntelMpsPlugin(Step):
+    """The Intel Metal driver carries Intel's plug-in for Metal Performance Shaders, which MPS tries before its own kernels. The sources
+    of that plug-in declare AIR functions with asm labels, and the Metal compiler of macOS 26 refuses them ("illegal string literal in
+    'asm'"), on any GPU. Every attempt fails and MPS falls back to its own kernels: loading the network of one image classification by
+    Vision asked for 732 compilations that all failed and took about 7 s instead of 0.3 s, and the image analysis of macOS loads
+    such networks in the background again and again. The drivers Apple ships for its own Intel GPUs in the same macOS carry the same
+    sources. The plug-in reads its switch from the Info.plist of the bundle at every use, so 0 there is enough, and only that value
+    changes."""
+    name = 'intel-mps-plugin'
+    what = ("Intel's plug-in for Metal Performance Shaders in the Intel Metal driver switched off: macOS 26 no longer compiles its kernels, "
+            'and every network loaded on the Iris Xe cost hundreds of compilations that all failed')
+    touches = [METAL_INFO]
+
+    def detail(self):
+        return ['sets MPSIntelPluginEnable to 0 in the Info.plist of the driver, the switch the plug-in reads at every use; nothing else in the file changes',
+                'Metal Performance Shaders then goes straight to its own kernels, the ones it fell back to after every failure',
+                'the signature of the bundle seals its Info.plist, so codesign --verify no longer passes on it; nothing checks that seal when the driver loads']
+
+    def run(self):
+        c = self.ctx
+        path = c.p(METAL_INFO)
+        if not os.path.exists(path):
+            raise Stop(f'{METAL_INFO} is not there: the graphics step installs it')
+        if mps_plugin_switch(path) is None:
+            raise Stop(f'{METAL_INFO} has no MPSIntelPluginEnable: it is not the Metal driver of Graphics 0.4.4')
+        tmp = path + '.anv-new'
+        shutil.copyfile(path, tmp)
+        r = subprocess.run(['/usr/libexec/PlistBuddy', '-c', f'Set {MPS_SWITCH} 0', tmp], capture_output=True, text=True)
+        if r.returncode:
+            os.unlink(tmp)
+            raise Stop(f'PlistBuddy could not change {METAL_INFO}: {(r.stdout + r.stderr).strip()[-300:]}')
+        os.chmod(tmp, 0o644)
+        if not c.fake:
+            os.chown(tmp, 0, 0)
+        os.replace(tmp, path)   # by rename: a process that is reading the old file keeps it
+
+    def check(self):
+        return None if mps_plugin_switch(self.ctx.p(METAL_INFO)) == 0 else 'MPSIntelPluginEnable is not 0 in the Info.plist of the Intel Metal driver'
+
+
 class NvrmKexts(Step):
     name = 'nvrm-kexts'
     what = 'NVRM, NVRMFB, NVAccel and NVRMAGDC built from nvidia-macos-driver acer/current over those of the package'
@@ -711,7 +762,7 @@ class Dlss(Step):
         return None if kernels and int(kernels.group(1)) > 0 else 'no GPU kernel was built for DLSS'
 
 
-STEPS = [NullMoth, Graphics, NvrmKexts, Plugin, Decoder, Nvk, MetalCache, LatSOF, PanelHiDPI, AuxKC, NitroSense, Dlss]
+STEPS = [NullMoth, Graphics, IntelMpsPlugin, NvrmKexts, Plugin, Decoder, Nvk, MetalCache, LatSOF, PanelHiDPI, AuxKC, NitroSense, Dlss]
 
 
 # ---------------------------------------------------------------- backups
@@ -1181,6 +1232,8 @@ def cmd_state(ctx):
     print(f'{"Metal driver":12} {metal:16} {"of Graphics 0.4.4" if metal == files["graphics_metal"][:16] else ""}')
     bridge = describe(ctx.p(IMPOSTOR))
     print(f'{"Metal bridge":12} {bridge:16} {"of Graphics 0.4.4" if bridge == files["graphics_impostor"][:16] else ""}')
+    switch = mps_plugin_switch(ctx.p(METAL_INFO))
+    print(f'{"Intel MPS":12} {"plug-in off" if switch == 0 else "no switch found" if switch is None else "plug-in on"}')
     print(f'{"collection":12} {describe(ctx.p(KC)):16}')
     print(f'{"NVMTL seal":12} {"ok" if subprocess.run(["/usr/bin/codesign", "--verify", ctx.p(NVMTL)], capture_output=True).returncode == 0 else "does not verify, or absent"}')
     return 0
@@ -1218,6 +1271,7 @@ def cmd_verify(ctx):
     line(metal == MANIFEST['installed_files']['graphics_metal'][:16], f'Metal driver of Graphics 0.4.4 ({metal})')
     bridge = describe(IMPOSTOR)
     line(bridge == MANIFEST['installed_files']['graphics_impostor'][:16], f'impostor.dylib of Graphics 0.4.4 ({bridge})')
+    line(mps_plugin_switch(METAL_INFO) == 0, "Intel's MPS plug-in switched off in the Metal driver")
     line(subprocess.run(['/usr/bin/codesign', '--verify', NVMTL], capture_output=True).returncode == 0, 'NVMTLDriver.bundle seal')
     with tempfile.TemporaryDirectory() as t:
         probe = Path(t) / 'blendtest'

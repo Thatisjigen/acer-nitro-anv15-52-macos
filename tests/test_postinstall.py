@@ -11,6 +11,7 @@ import hashlib
 import importlib.util
 import json
 import os
+import plistlib
 import shutil
 import signal
 import stat
@@ -141,6 +142,8 @@ class Fixture:
         metal = write(payload / 'Library/GPUBundles/AppleIntelTGLGraphicsMTLDriver.bundle/Contents/MacOS/AppleIntelTGLGraphicsMTLDriver', 'stock metal\n')
         impostor = write(payload / 'Library/GPUBundles/AppleIntelTGLGraphicsMTLDriver.bundle/Contents/MacOS/impostor.dylib', 'impostor of Graphics\n')
         write(payload / 'Library/GPUBundles/AppleIntelTGLGraphicsMTLDriver.bundle/Contents/MacOS/descriptor.dylib', 'descriptor\n')
+        write(payload / 'Library/GPUBundles/AppleIntelTGLGraphicsMTLDriver.bundle/Contents/Info.plist', plistlib.dumps(
+            {'CFBundleExecutable': 'AppleIntelTGLGraphicsMTLDriver', 'MPSIntelPluginFeatureList': {'MPSIntelCNNPoolingEnable': 1, 'MPSIntelPluginEnable': 1}}).decode())
         write(payload / 'Library/GPUBundles/XeOpenCL/x', 'x\n')
         common = self.base / 'Common.pkg'
         subprocess.run(['/usr/bin/pkgbuild', '--quiet', '--root', str(payload), '--identifier', 'test.Common', '--version', '1', str(common)], check=True)
@@ -210,6 +213,10 @@ class Install(unittest.TestCase):
         intel = self.root / 'Library/GPUBundles/AppleIntelTGLGraphicsMTLDriver.bundle/Contents/MacOS'
         self.assertEqual((intel / 'AppleIntelTGLGraphicsMTLDriver').read_text(), 'stock metal\n')
         self.assertEqual((intel / 'impostor.dylib').read_text(), 'impostor of Graphics\n', 'the bridge stays the one of Graphics')
+        self.assertEqual(plistlib.loads((intel.parent / 'Info.plist').read_bytes()),
+                         {'CFBundleExecutable': 'AppleIntelTGLGraphicsMTLDriver', 'MPSIntelPluginFeatureList': {'MPSIntelCNNPoolingEnable': 1, 'MPSIntelPluginEnable': 0}},
+                         "only the master switch of Intel's MPS plug-in goes to 0")
+        self.assertIn('plug-in off', self.f.run('state').stdout)
         self.assertEqual(stat.S_IMODE(os.stat(ext / 'NVRM.kext/Contents/MacOS/NVRM').st_mode), 0o755)
         self.assertEqual((self.root / 'Library/KernelCollections/AuxiliaryKernelExtensions.kc').read_text(), 'collection of the auxkc step\n')
         self.assertTrue((self.root / 'Library/LaunchDaemons/com.nitrosense.nitrod.plist').exists())
@@ -353,7 +360,7 @@ class Install(unittest.TestCase):
         self.assertNotEqual(r.returncode, 0)
         self.assertIn('dlss-pkg/dlss/dlss_cache is not built', r.stderr)
         self.assertEqual(tree(self.root), before)
-        self.assertNotIn('== 12/12 dlss', self.f.install('--skip', 'dlss').stdout)
+        self.assertNotRegex(self.f.install('--skip', 'dlss').stdout, r'== \d+/\d+ dlss')
 
     def test_a_copy_that_fails_leaves_no_line_and_is_made_again(self):
         unreadable = write(self.root / 'Library/Extensions/NVAccel.kext/Contents/MacOS/NVAccel', 'someone else\n')
