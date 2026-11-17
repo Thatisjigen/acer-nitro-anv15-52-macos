@@ -49,9 +49,9 @@ NITRO_DIR = '/Library/Application Support/NitroSense'
 NITRO_PLIST = '/Library/LaunchDaemons/com.nitrosense.nitrod.plist'
 NITRO_APP = '/Applications/NitroSense.app'
 NVMTL_CONF = GB + '/nvmtl/nvrm610.conf'
-# The processes that load libnvencvt to decode on the RTX: Safari's GPU process, where WhateverXe lets it map the library. The Aerial
-# wallpaper and its preview are left out: nvwallpaper=1 on the boot line adds them in the plugin, and without it they keep Apple's decoders
-NVENCVT_LINE = 'NVMTL_NVENCVT=com.apple.WebKit.GPU'
+# The line earlier versions of this install added to that file, when the plugin loaded libnvencvt's decoders only in the processes it
+# listed. The plugin now registers them in every process, and what the line would select are the library's encoders: it must not stay
+OLD_NVENCVT_LINE = 'NVMTL_NVENCVT=com.apple.WebKit.GPU'
 # DLSS 4: what NullMoth's dlss_fetch.sh writes, NVIDIA's files and the GPU kernels built from them. The Metal plugin looks for it when a game starts
 DLSS = '/Library/NullMoth/dlss'
 DLSS_FREE = 2.5e9   # dlss_fetch.sh stops below this in /var/tmp
@@ -73,7 +73,8 @@ ARTIFACTS = ['NVRM.kext/Contents/MacOS/NVRM', 'NVRMFB.kext/Contents/MacOS/NVRMFB
              'WhateverXe.kext/Contents/MacOS/WhateverXe', 'HybridPM.kext/Contents/MacOS/HybridPM', 'AppleALC.kext/Contents/MacOS/AppleALC',
              'IDispHDA.kext/Contents/MacOS/IDispHDA', 'AirportMtkWlan.kext/Contents/MacOS/AirportMtkWlan',
              'SimpleMtkBtPatcher.kext/Contents/MacOS/SimpleMtkBtPatcher', 'BTLEAdvFixup.kext/Contents/MacOS/BTLEAdvFixup', 'NMAppFree.kext/Contents/MacOS/NMAppFree',
-             'USBDiskKeeper.kext/Contents/MacOS/USBDiskKeeper',
+             'USBDiskKeeper.kext/Contents/MacOS/USBDiskKeeper', 'Lilu.kext/Contents/MacOS/Lilu',
+             'IntelHybridCores.kext/Contents/MacOS/IntelHybridCores',
              # not a driver: what install runs to download and prepare DLSS
              'dlss-pkg/dlss_fetch.sh', 'dlss-pkg/dlss/dlss_cache', 'dlss-pkg/dlss/nm_unzstd', 'dlss-pkg/dlss/assertfail_trap.ptx']
 # Which forks each compiled file comes from. SMCNvidiaGPU is built with NVRM, so both count
@@ -90,11 +91,12 @@ ARTIFACT_FORKS = {
     'SimpleMtkBtPatcher.kext/Contents/MacOS/SimpleMtkBtPatcher': ['SimpleMtkBtFw'], 'BTLEAdvFixup.kext/Contents/MacOS/BTLEAdvFixup': ['ForbiddenItlwm'],
     'NMAppFree.kext/Contents/MacOS/NMAppFree': ['NMAppFree'],
     'USBDiskKeeper.kext/Contents/MacOS/USBDiskKeeper': ['USBKeeper'],
+    'Lilu.kext/Contents/MacOS/Lilu': ['Lilu'], 'IntelHybridCores.kext/Contents/MacOS/IntelHybridCores': ['IntelHybridCores'],
     'dlss-pkg/dlss_fetch.sh': ['nvidia-macos-driver'], 'dlss-pkg/dlss/dlss_cache': ['nvidia-macos-driver'], 'dlss-pkg/dlss/nm_unzstd': ['nvidia-macos-driver'],
     'dlss-pkg/dlss/assertfail_trap.ptx': ['nvidia-macos-driver'],
 }
-COMPILED_FOR_EFI = ['NMHDA', 'NitroEC', 'SMCNvidiaGPU', 'WhateverXe', 'HybridPM', 'AppleALC', 'IDispHDA', 'AirportMtkWlan', 'SimpleMtkBtPatcher', 'BTLEAdvFixup', 'NMAppFree',
-                    'USBDiskKeeper']
+COMPILED_FOR_EFI = ['Lilu', 'NMHDA', 'NitroEC', 'SMCNvidiaGPU', 'WhateverXe', 'HybridPM', 'IntelHybridCores', 'AppleALC', 'IDispHDA', 'AirportMtkWlan', 'SimpleMtkBtPatcher',
+                    'BTLEAdvFixup', 'NMAppFree', 'USBDiskKeeper']
 EFI_ARTIFACTS = [f'{k}.kext/Contents/MacOS/{k}' for k in COMPILED_FOR_EFI]
 
 
@@ -447,7 +449,7 @@ class Plugin(Step):
 
 class Decoder(Step):
     name = 'decoder'
-    what = 'The video decoders of nvenc acer/current in place of the two of NullMoth, and under the name the plugin loads for Safari\'s video on the RTX'
+    what = 'The video decoders of nvenc acer/current in place of the two of NullMoth, and under the name the plugin loads in every process that plays video'
     touches = [NVMTL, NVMTL_CONF]
     needs_out = ['bundle/libnvencvt.dylib']
 
@@ -470,14 +472,14 @@ class Decoder(Step):
             raise Stop(problems[0])
         macos = c.p(NVMTL + '/Contents/MacOS/')
         put_file(c, c.out / 'bundle/libnvencvt.dylib', macos + 'libnvdec_h264.dylib')
-        put_file(c, c.out / 'bundle/libnvencvt.dylib', macos + 'libnvencvt.dylib')   # the plugin loads it by this name for the processes in NVMTL_NVENCVT
+        put_file(c, c.out / 'bundle/libnvencvt.dylib', macos + 'libnvencvt.dylib')   # the plugin loads it by this name, in every process but WindowServer
         os.unlink(macos + 'libnvdec_hevc.dylib')
         os.symlink('libnvdec_h264.dylib', macos + 'libnvdec_hevc.dylib')
         resign_nvmtl(c)
         conf = c.p(NVMTL_CONF)
         text = Path(conf).read_text() if os.path.exists(conf) else ''
-        # one NVMTL_NVENCVT line, this one: a list left by an earlier install would give the plugin two to choose from
-        lines = [x for x in text.splitlines() if not x.startswith('NVMTL_NVENCVT=')] + [NVENCVT_LINE]
+        # nvrm610.conf stays the one of NullMoth's package, as on the tested machine: only the line of an earlier install goes
+        lines = [x for x in text.splitlines() if x != OLD_NVENCVT_LINE]
         if lines != text.splitlines():
             Path(conf).write_text('\n'.join(lines) + '\n')
 
@@ -489,8 +491,9 @@ class Decoder(Step):
                 return f'{name} is not the build'
         if os.readlink(macos + 'libnvdec_hevc.dylib') != 'libnvdec_h264.dylib':
             return 'libnvdec_hevc.dylib does not point to libnvdec_h264.dylib'
-        if NVENCVT_LINE not in Path(c.p(NVMTL_CONF)).read_text().splitlines():
-            return 'nvrm610.conf does not send Safari\'s video to this decoder'
+        conf = c.p(NVMTL_CONF)
+        if os.path.exists(conf) and OLD_NVENCVT_LINE in Path(conf).read_text().splitlines():
+            return 'nvrm610.conf still has the process list of an earlier install'
         return None
 
 
@@ -946,7 +949,8 @@ def cmd_build(ctx):
     # These go into the binaries. For a commit that was tested they stay what they were, to give the same file; for a newer one they follow it
     if heads.get('nvenc') != forks['nvenc']['tested_commit']:
         env['NVENC_VERSION'] = 'v0.9.5-g' + heads['nvenc'][:7]
-    for fork, key in (('WhateverXe', 'WHATEVERXE_DATE'), ('nvidia-macos-driver', 'NMHDA_DATE'), ('AppleALC', 'IDISPHDA_DATE'), ('SimpleMtkBtFw', 'MTKBT_DATE'), ('NMAppFree', 'NMAPPFREE_DATE')):
+    for fork, key in (('WhateverXe', 'WHATEVERXE_DATE'), ('nvidia-macos-driver', 'NMHDA_DATE'), ('AppleALC', 'IDISPHDA_DATE'), ('SimpleMtkBtFw', 'MTKBT_DATE'), ('NMAppFree', 'NMAPPFREE_DATE'),
+                      ('Lilu', 'LILU_DATE'), ('IntelHybridCores', 'INTELHYBRIDCORES_DATE'), ('ForbiddenItlwm', 'BTLEADV_DATE')):
         if heads.get(fork) != forks[fork]['tested_commit']:
             env[key] = git(ctx.src / fork, 'show', '-s', '--format=%cs', 'HEAD')
     r = subprocess.run(['/bin/bash', str(HERE / 'build.sh'), *ctx.args.stages], env=dict(os.environ, **env))

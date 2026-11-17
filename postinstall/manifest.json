@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "date": "2026-11-14",
+ "date": "2026-11-17",
  "tested": {
   "macos_version": "26.7.3",
   "macos_builds": [
@@ -17,25 +17,25 @@
    "url": "https://github.com/Thatisjigen/nvidia-macos-driver.git",
    "ref": "acer/current",
    "license": "PolyForm Noncommercial 1.0.0; translator LGPL-3.0",
-   "tested_commit": "7f54646815f634074f785b2cc5dfd62515f2a65d"
+   "tested_commit": "a29ea238a5db0c250d6dbfc7330786e65e6270f3"
   },
   "WhateverXe": {
    "url": "https://github.com/Thatisjigen/WhateverXe.git",
    "ref": "acer/current",
    "license": "BSD-3-Clause",
-   "tested_commit": "e1a51e726b81227fad0de73f8f8323c6c707a539"
+   "tested_commit": "e8c222d05ce5bc4a9adf80183b183e212125efc9"
   },
   "nvenc": {
    "url": "https://github.com/Thatisjigen/nvenc.git",
    "ref": "acer/current",
    "license": "MIT",
-   "tested_commit": "ce74f17cd0426fdde0ac0b8854a2e53a4077a3eb"
+   "tested_commit": "5c6013a1824eaf5cb385d5f0a5fb2aa60aa7a90c"
   },
   "NitroSense-macOS": {
    "url": "https://github.com/Thatisjigen/NitroSense-macOS.git",
    "ref": "acer/current",
    "license": "GPL-3.0",
-   "tested_commit": "f6fd528de9c45d56fe9e6c4e182692ac2631502e"
+   "tested_commit": "f115e41273256d7e73141410a8f7e0a294ce80db"
   },
   "SMCNvidiaGPU": {
    "url": "https://github.com/Thatisjigen/SMCNvidiaGPU.git",
@@ -59,12 +59,12 @@
    "url": "https://github.com/Thatisjigen/HybridPM.git",
    "ref": "main",
    "license": "Thou Shalt Not Profit 1.0",
-   "tested_commit": "f6654d45c703c669acb59d97ad3b382427ea7c00"
+   "tested_commit": "4914c2526311242ab174ce499c35211a5acf536a"
   },
   "SimpleMtkWlan": {
    "url": "https://github.com/Thatisjigen/SimpleMtkWlan.git",
    "ref": "acer/current",
-   "tested_commit": "201610e338fab412edc90f481788a9dafc733526",
+   "tested_commit": "fced826e66a78f050f0baf82aa04405891e9a711",
    "license": "GPL-2.0"
   },
   "SimpleMtkBtFw": {
@@ -90,6 +90,18 @@
    "ref": "main",
    "license": "none stated yet",
    "tested_commit": "4ef8b10ffc5e5f0cf2313ef5ca5f96524d4bb07b"
+  },
+  "Lilu": {
+   "url": "https://github.com/Thatisjigen/Lilu.git",
+   "ref": "acer/current",
+   "license": "BSD-3-Clause",
+   "tested_commit": "c2fe188c06d0817ec0b1ccb661f8500692b37f91"
+  },
+  "IntelHybridCores": {
+   "url": "https://github.com/Thatisjigen/IntelHybridCores.git",
+   "ref": "main",
+   "license": "MIT",
+   "tested_commit": "1b9469189076b62ec408cfa73d0d53818979ba92"
   }
  },
  "git_deps": {
@@ -158,7 +170,7 @@
    "file": "lilu-debug.zip",
    "url": "https://github.com/acidanthera/Lilu/releases/download/1.7.2/Lilu-1.7.2-DEBUG.zip",
    "sha256": "e95df95d82e8b151047abf359ecd9c853755c59293e19dfcc3907da8fbd8cf89",
-   "license": "BSD-3-Clause"
+   "license": "BSD-3-Clause; the Lilu SDK the plugins are compiled against, and the bundle the lilu stage puts its executable in: the Lilu that runs is built from the fork"
   },
   "sof": {
    "file": "sof-bin-2026.09.2.tar.gz",
@@ -271,12 +283,15 @@
   "MKSDK_COMMIT": "3f750085caa17ec3a7880f11c11bf4f48cd6a164",
   "OGKM_COMMIT": "e6a2e01579fbbd1ca2ed43fef2ee2589e9bd8bd9",
   "NVKMS_DATE": "Tue Nov 10 13:47:05 CET 2026",
-  "NVENC_VERSION": "v0.9.5-gce74f17",
+  "NVENC_VERSION": "v0.9.5-g5c6013a",
   "NMHDA_DATE": "2026-11-01",
-  "WHATEVERXE_DATE": "2026-11-15",
+  "WHATEVERXE_DATE": "2026-11-17",
   "IDISPHDA_DATE": "2026-11-05",
   "MTKBT_DATE": "2026-11-06",
-  "NMAPPFREE_DATE": "2026-11-06"
+  "NMAPPFREE_DATE": "2026-11-06",
+  "LILU_DATE": "2026-03-20",
+  "INTELHYBRIDCORES_DATE": "2026-11-15",
+  "BTLEADV_DATE": "2026-11-14"
  },
  "installed_files": {
   "nullmoth_decoders": {
@@ -308,10 +323,10 @@
    "sha256": "b9dbc698dade75edf0feb5fafe440790ee5a4320bb18649e65c60cba0ba79eb5"
   },
   "NVRMFB.kext/Contents/MacOS/NVRMFB": {
-   "sha256": "ef2c5635ff4b4e62c938c54ddc7f8c653f0f26c3152b9fe2b674f8313a41f26e"
+   "sha256": "43a9b1e40a47100a83b75b879b61834c6a06df69350770241076839bc7e29a8e"
   },
   "NVAccel.kext/Contents/MacOS/NVAccel": {
-   "sha256": "6add0fe72acc2221451d9af28d1ffd80097098587266b851aa3d1d8ea4537f93"
+   "sha256": "62861b3729054bd4910dcaef2bda2d8c94558f066e5152fc9d03d7f49b06792f"
   },
   "NVRMAGDC.kext/Contents/MacOS/NVRMAGDC": {
    "sha256": "7133106805d847b3c77f0829ef8861bbded5ada41023cacdfa0104f977d756fb"
@@ -320,53 +335,61 @@
    "sha256": "9daea091cdc5ba8f84bce3808cd62f38caae8fe7e4e92c1d9c9383b93a760b29"
   },
   "bundle/NVMTLDriver": {
-   "sha256": "71af7bcc2165ea94a863d077e8583068f3f75d75703684f3929f727492fde60c",
+   "sha256": "4060f9de70ba238bafb1b75d406262601ed155c572eb91508624ed9710692f69",
    "note": "same code and UUID; what runs carries the seal of the bundle it is installed in",
-   "reference_sha256": "d0467ed464441f6e2bc328dd9ddcdf346d7ecf60877bf5919d39b8432864ae58"
+   "reference_sha256": "951e03d139cb141d6f20deae24c5baf5ac9d7c9cbe513b0d604c5f55c4d4ebdd"
   },
   "bundle/libnvmtl_translate.dylib": {
-   "sha256": "203e9632a698420321423c94233bde710baaa75a1068320ec9339457337dd456",
+   "sha256": "90ef91bec23c7878b03bf8b77102188d46f81c26230a527c216b7e472cf7c78b",
    "note": "same sources; what runs keeps the paths of the folder it was built in, here they read /build/translator",
-   "reference_sha256": "9e77e0b6e765ac0196246b740f0912d15ec3816090bb0568678c3d6fbd73376d"
+   "reference_sha256": "6d2f5da173530d80c5d241d1606c3b2c0cfbcdcb8e1d41de7889545402d0ae06"
   },
   "bundle/libnvencvt.dylib": {
-   "sha256": "4b03878899be9890aba3df2c37b45f630b982dd5df366c6bd688e78c9ac05144",
-   "note": "same code; what runs was built by a script of its own, with another version string and another internal name, before one log line lost a code of the work log",
-   "reference_sha256": "1c8104ba69bf11a3651944d659d98320dbe1ca889e1dc5ecfafe8e66920a5dd6"
+   "sha256": "b74c0bc6fc1fd6130f98e632228f8a9442bf8dc066574961fba99a315d6b4273",
+   "note": "same code; what runs was built by a script of its own, with another version string and another internal name, before one log line lost a code of the work log: built that way, with that line, it is the same file",
+   "reference_sha256": "ebabf84bda1dd20a4630727e77aa488cd948d49bc06736f8a62127c1d02ad4f0"
   },
   "LatSOFAudio.kext/Contents/MacOS/LatSOFAudio": {
    "sha256": "afeba8ac01d5207c926629fccc2747fd8e1588b68830cc4d0b3159a4d6b084d2"
   },
   "NitroEC.kext/Contents/MacOS/NitroEC": {
-   "sha256": "0febe845e4fefd8bf4959b65895e73bbbd7f1a341134317a51b536b2bf94875a"
+   "sha256": "e0f5555bddfd101fffdc2cc3a9f6d6780c14d31cdf272108f97e5184eeb16336"
   },
   "nitrosense/nitrod": {
-   "sha256": "a1c7b6e654fe2d897632a5c6346fd1ab3fcd846bc7cec57aaad7438a990bd27d",
-   "note": "same code; what runs still has the date of an EC dump in a help text, and says version 1.1.0",
-   "reference_sha256": "5456011ad6868cc26f1a21967c0b1da04a2f585b33bfb6545ce51e437a8bdc65"
+   "sha256": "cee31e724eb15dcd1118ce44594e0053c5aa2863cca9409cb6215231d1aa67d2",
+   "note": "same code; what runs still has the date of an EC dump in a help text: with that text it is the same file",
+   "reference_sha256": "7167308f253dad391985116658a961c4517dcf758bbbf8898b66d81abeb740ad"
   },
   "nitrosense/nitroctl": {
    "sha256": "b6e88cde22c66a4bfab40a4d656f5cf4b6732871eb5375e6567d8e2c59fedd62",
-   "note": "same code; what runs still has the date of an EC dump in a help text, and says version 1.1.0",
-   "reference_sha256": "432475ced926ca28b89337c7fb8dc4f2fa2cd8bdf5ab66ed91e1becfc0254d8d"
+   "note": "same code; what runs was built before the shared code got the daemon's heartbeat for the fan watchdog, which the tool never calls, and still has the date of an EC dump in a help text",
+   "reference_sha256": "a6057ceb93469fd6ef531552a8a09b79ae7de1ccb2181adec39309ca75851c92"
   },
   "nitrosense/NitroSense.app/Contents/MacOS/NitroSense": {
-   "sha256": "a925bf818cbe606922bc5d1ce6be91b8472406dbfb73814e9d01085dbc8166ca",
-   "note": "same code; what runs still has the date of an EC dump in a help text",
-   "reference_sha256": "61f22c3ab0ce6f464b740b6c7e7e6da67fdf78c061c00f57011c58e58ab52781"
+   "sha256": "513391edfbf3b2d2453e479a9e8a724df28d8d3674d3d53bc73acc6149bc8ad1",
+   "note": "same code; what runs was built without the daemon's heartbeat for the fan watchdog in the shared code, which the app never calls, and still has the date of an EC dump in a help text",
+   "reference_sha256": "9b24ef67eebb20e98c6e9eea9d5a43afc79007307f6455904ccfefd1780713ec"
   },
   "SMCNvidiaGPU.kext/Contents/MacOS/SMCNvidiaGPU": {
    "sha256": "8605ca5504a62a895fc60b7fd72de543d7f21d0f9da52fc001f065dfd5bfc5c8"
   },
+  "Lilu.kext/Contents/MacOS/Lilu": {
+   "sha256": "ce79584f3d748e72047a1a57a4dabc3dbc70ffb9a2a7245def49b35bfae7aa26"
+  },
   "WhateverXe.kext/Contents/MacOS/WhateverXe": {
-   "sha256": "6d3a19937be3822155df601afb657b0929c3012a294f3ec6c38a4f956f747eaf",
-   "sha256_without_uuid": "db6e8d3884c7584b10e0a063fd9197a0a6d8d4aa7cd88bc24c8305dd9fda72a7",
-   "note": "same code; what runs has the old names of its diagnostics, its IORegistry keys among them, and the UUID depends on the folder of the build",
-   "reference_sha256": "0006d5e95d1ab8c61a18c7bc343e509aee7b1356daad4c1f54273f24d996ee35",
-   "reference_sha256_without_uuid": "ee97c8200e1d2423ff77a893a129b33ff130b3fd166ac831ac6181f97b3eae25"
+   "sha256": "c72edcf4b2a3a2304a5250cb21c1a4538ef7c554e865436a105d282d0e40324a",
+   "sha256_without_uuid": "326d5395014abbc2f296464f6ebe332caaf9c468ba6d504752d9aaa292966ede",
+   "note": "same code; what runs has the old names of its diagnostics, its IORegistry keys among them. The UUID changes at every build: the linker hashes the paths and times of the objects into it before they are stripped",
+   "reference_sha256": "c177242c0b44917af4f402701983d867c64e47328c8301ff9c64887da1b4e3c0",
+   "reference_sha256_without_uuid": "d8cce0c12a8ee65bf8dfafa380dc495dbab80026f000533146c483714f292bf9"
   },
   "HybridPM.kext/Contents/MacOS/HybridPM": {
-   "sha256": "581f7fc66dae274d8d09e8b3aa68350c9e579c315cd5add2e4bd13e020c1b73a"
+   "sha256": "121a83de159159af6c547828fda9bb2eb779166951e9ae2e05deaec36ff66610"
+  },
+  "IntelHybridCores.kext/Contents/MacOS/IntelHybridCores": {
+   "sha256": "9ddb3d8ad3cb720c9570bd87a78a3c1f9e542df9bdfd9daddd4bb60e494c93af",
+   "note": "same code; what runs keeps the paths and times of its debug map, and with them another UUID and another signature: without the debug map, the signature and the UUID the two files are the same",
+   "reference_sha256": "789baa9276ed35da627039675a3a302cdd37112677e3f6e673d593515db225c8"
   },
   "AppleALC.kext/Contents/MacOS/AppleALC": {
    "sha256": "b2860ae275fd537f7f95f5aab01add0d412c21fc270ea20be020a9bfe0cfc8b1"
@@ -375,9 +398,9 @@
    "sha256": "d6e59bfcffcd7f9d362f42662a364eb85374b9520dc413d8971bdb79bcdee0cc"
   },
   "AirportMtkWlan.kext/Contents/MacOS/AirportMtkWlan": {
-   "sha256": "e9bd72c23c9889d7fbbc304813b689c53a6ebe31f461383d512e1d14171c9f2e",
+   "sha256": "71e4ba742ad41fb004cece81cbfbb5e8f4e7d4a89227b3619f8e721440e0c573",
    "note": "the one that runs carries the short commit of the local branch it was built from in its version string; built with that string it is the same file",
-   "reference_sha256": "007e3acd49c41c1092534bf18bf8b1d09a8b1e51df14949aa2e6f82ae2852fa8"
+   "reference_sha256": "601c73d51388ff1036d0a041f7aa218445dc61f4f916f94c52c9a8d98eb38650"
   },
   "SimpleMtkBtPatcher.kext/Contents/MacOS/SimpleMtkBtPatcher": {
    "sha256": "1917bcab0b1e8f757e78398736e1fe209875dc27cf2b20255dfc827859c7beb0"

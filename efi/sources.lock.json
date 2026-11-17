@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "date": "2026-11-14",
+ "date": "2026-11-17",
  "opencore": "1.0.9 RELEASE 78d5ff8",
  "tools": {
   "asset": "OpenCore-1.0.9",
@@ -32,12 +32,6 @@
    "sha256": "1663fa54103cf808b45fda3f0385626d1f1899a9ed8258d21a827db4426ed408",
    "license": "Apple binary, never copied into this repository",
    "note": "acidanthera/OcBinaryData"
-  },
-  "Lilu-1.7.2-DEBUG": {
-   "url": "https://github.com/acidanthera/Lilu/releases/download/1.7.2/Lilu-1.7.2-DEBUG.zip",
-   "sha256": "e95df95d82e8b151047abf359ecd9c853755c59293e19dfcc3907da8fbd8cf89",
-   "license": "BSD-3-Clause",
-   "note": "acidanthera/Lilu; its Contents/Resources is also the SDK the forks build against"
   },
   "Lilu-1.7.3": {
    "url": "https://github.com/dortania/build-repo/releases/download/Lilu-c7a1cda/Lilu-1.7.3-RELEASE.zip",
@@ -192,11 +186,8 @@
  "kexts": {
   "full": {
    "Lilu": {
-    "asset": "Lilu-1.7.2-DEBUG",
-    "root": "Lilu.kext",
-    "plist_sha256": "b7798755a2dda3006783341efa5837444ceda21c7a743651276e1accbb8d4dd3",
-    "binary_sha256": "438b912da9057fadfab8c366ad7ac2eada5227f415622ec7fc5037c06e2cffa5",
-    "same_as_tested": true
+    "compiled": true,
+    "tested_binary_sha16": "ce79584f3d748e72"
    },
    "AppleALC": {
     "compiled": true,
@@ -233,6 +224,10 @@
     "plist_sha256": "36ee8b76c43df4a9390163b410d80acd05af4f815f2b71c3ec0e67f9fb76e2f4",
     "binary_sha256": "0e36496ff627db53002ad04bd8e1e910909e083e587609fb9b472d5f2d7bde07",
     "same_as_tested": true
+   },
+   "IntelHybridCores": {
+    "compiled": true,
+    "tested_binary_sha16": "9ddb3d8ad3cb720c"
    },
    "NVMeFix": {
     "asset": "NVMeFix-1.1.4",
@@ -347,7 +342,7 @@
    },
    "WhateverXe": {
     "compiled": true,
-    "tested_binary_sha16": "6d3a19937be38221"
+    "tested_binary_sha16": "c72edcf4b2a3a230"
    },
    "XHCI-unsupported": {
     "local": "efi/kexts/XHCI-unsupported.kext",
@@ -397,11 +392,11 @@
    },
    "HybridPM": {
     "compiled": true,
-    "tested_binary_sha16": "581f7fc66dae274d"
+    "tested_binary_sha16": "121a83de159159af"
    },
    "NitroEC": {
     "compiled": true,
-    "tested_binary_sha16": "0febe845e4fefd8b"
+    "tested_binary_sha16": "e0f5555bddfd101f"
    },
    "SimpleMtkBtFw": {
     "asset": "SimpleMtkBtFw-1.1.0",
@@ -426,7 +421,7 @@
    },
    "AirportMtkWlan": {
     "compiled": true,
-    "tested_binary_sha16": "e9bd72c23c9889d7"
+    "tested_binary_sha16": "71e4ba742ad41fb0"
    },
    "IDispHDA": {
     "compiled": true,

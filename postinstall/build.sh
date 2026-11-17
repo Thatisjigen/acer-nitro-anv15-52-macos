@@ -10,7 +10,9 @@ export PATH=/usr/bin:/bin:/usr/sbin:/sbin
 : "${WORK:?run this through postinstall.py build}"
 HERE=$(cd "$(dirname "$0")" && pwd)
 SRC=$WORK/src; DEPS=$WORK/deps; OBJ=$WORK/obj; OUT=$WORK/out; LOGS=$WORK/logs
-NM=$SRC/nvidia-macos-driver; LILU=$DEPS/lilu-debug/Lilu.kext; LILU_SDK=$LILU/Contents/Resources; MKSDK=$DEPS/MacKernelSDK
+NM=$SRC/nvidia-macos-driver; MKSDK=$DEPS/MacKernelSDK
+# acidanthera's Lilu 1.7.2 DEBUG archive: the SDK every Lilu plugin here is compiled against. The Lilu for the EFI is the lilu stage's
+LILU=$DEPS/lilu-debug/Lilu.kext; LILU_SDK=$LILU/Contents/Resources
 OGKM=$DEPS/open-gpu-kernel-modules; NVGFX=$DEPS/NvGfx; PKG=$DEPS/nullmoth/pkgroot
 JOBS=${JOBS:-$(sysctl -n hw.logicalcpu)}
 CC=$(xcrun -f clang); CXX=$(xcrun -f clang++)
@@ -401,7 +403,7 @@ stage_dlss() {   # DLSS 4: the two tools NullMoth's dlss_fetch.sh runs on this M
   say "DLSS: dlss_cache $(sha "$OUT/dlss-pkg/dlss/dlss_cache"), nm_unzstd $(sha "$OUT/dlss-pkg/dlss/nm_unzstd"), dlss_fetch.sh $(sha "$OUT/dlss-pkg/dlss_fetch.sh")"
 }
 
-stage_nvenc() {   # libnvencvt: the decoders for H.264, HEVC, VP9 and AV1 on the RTX 5050, with the frames untiled on the Iris Xe
+stage_nvenc() {   # libnvencvt: the decoders for H.264, HEVC, VP9 and AV1 on the RTX 5050, with the frames untiled on the RTX that decoded them
   local F=$SRC/nvenc K=$DEPS/open-gpu-kernel-modules-610 D=$DEPS/open-gpu-doc S=$DEPS/webkit-spi W=$OBJ/nvenc
   export_tree "$F" "$W" src vt; mkdir -p "$OUT/bundle" "$W/o"; : > "$LOGS/nvenc.log"
   # one object at a time, with fixed names: clang's own temporary names make the linker order differ at every build. The order is the
@@ -450,6 +452,71 @@ stage_smcnvidiagpu() {   # has to match the NVRM above: it is given that binary,
   say "SMCNvidiaGPU $(sha "$OUT/SMCNvidiaGPU.kext/Contents/MacOS/SMCNvidiaGPU")"
 }
 
+stage_lilu() {   # Lilu 1.7.2 DEBUG from the fork: acidanthera's tag and one commit, which gives the trampolines 16 KiB instead of 4. Every function a
+  # plugin routes with a wrapper takes its trampoline from one pool that all plugins share; with WhateverXe, IDispHDA and IntelHybridCores
+  # together the 4096 bytes run out, and the plugin that asks last keeps its functions unrouted with no error.
+  # The recipe is the Lilu target of Lilu.xcodeproj, Debug configuration, written for clang and ld: the 39 sources in the order of its
+  # Sources phase, which is also the link order, after the kmod_info file Xcode generates; C++ with -fapple-kext and C without, as the
+  # release binary shows (its C leaf functions use the red zone); symbols not hidden and no debug information, as Xcode's Debug has it
+  local S=$OBJ/lilu/src O=$OBJ/lilu/out K f o exe defs incs other base cflags cxxflags aflags cmd sources objs
+  export_tree "$SRC/Lilu" "$S"; rm -rf "$O"; mkdir -p "$O"; K=$(mksdk)
+  [ "$(shasum -a 256 "$S/Lilu.xcodeproj/project.pbxproj" | cut -c1-64)" = 8ba17837c899f8be8abac416111efa8d2c623d1bdbe3cf8a9784aae571c495e3 ] \
+    || die "Lilu.xcodeproj is not the one of 1.7.2, which this stage follows: read it again before building another Lilu"
+  sources=(Lilu/Sources/kern_policy.cpp capstone/arch/X86/X86DisassemblerDecoder.c Lilu/Sources/kern_patcher.cpp
+    Lilu/Sources/kern_rtc.cpp capstone/arch/X86/X86Disassembler.c Lilu/Sources/kern_ubsan.c Lilu/Sources/kern_start.cpp
+    Lilu/Sources/kern_disasm.cpp Lilu/Sources/kern_memmem.cpp Lilu/Sources/kern_efi.cpp Lilu/Sources/kern_api.cpp
+    Lilu/Sources/kern_devinfo.cpp capstone/MCInst.c Lilu/Sources/kern_qsort.cpp capstone/arch/X86/X86Module.c
+    capstone/MCRegisterInfo.c Lilu/Sources/kern_nvram.cpp capstone/arch/X86/X86ATTInstPrinter.c hde/hde64.c
+    capstone/arch/X86/X86IntelInstPrinter.c Lilu/Sources/kern_efi_trampoline_i386.s capstone/cs.c
+    Lilu/Sources/kern_compression.cpp capstone/MCInstrDesc.c Lilu/Sources/kern_user.cpp hde/hde32.c
+    Lilu/Sources/kern_efi_trampoline_x86_64.s Lilu/Sources/kern_cpu.cpp Lilu/Sources/kern_util.cpp Lilu/Sources/kern_mach.cpp
+    Lilu/Sources/kern_file.cpp umm_malloc/umm_malloc.c capstone/SStream.c lzvn/lzvn.c capstone/arch/X86/X86Mapping.c
+    Lilu/Sources/kern_iokit.cpp Lilu/Sources/kern_crypto.cpp capstone/utils.c sha256/sha256.c)
+  defs=(-DCAPSTONE_HAS_X86=1 -DCAPSTONE_HAS_OSXKERNEL=1 -DCAPSTONE_DIET=1 -DCAPSTONE_X86_REDUCE=1 -DCAPSTONE_STATIC=1 -DUMM_BEST_FIT=1
+    -DUMM_MALLOC_CFG_HEAP_SIZE=0x10000 -DMODULE_VERSION=1.7.2 -DPRODUCT_NAME=Lilu -DDEBUG=1 -DKERNEL -DKERNEL_PRIVATE -DDRIVER_PRIVATE -DAPPLE -DNeXT)
+  # Xcode's header maps find "kern_efi.hpp", "sha256.h" and <umm_malloc.h> outside the search folders: here the first three entries do
+  incs=(-iquote "$S/Lilu/Headers" -iquote "$S/sha256" -I"$S/umm_malloc" -I"$S/capstone/include" -I"$S/lzvn" -I"$S/Lilu" -I"$K/Headers")
+  other=(-mmmx -msse -msse2 -msse3 -mfpmath=sse -mssse3 -ftree-vectorize -fno-non-call-exceptions -fno-builtin -fno-asynchronous-unwind-tables
+    -Wall -Wextra -Wno-unused-parameter -Wno-deprecated-register -Wno-unknown-pragmas -Wno-unknown-warning-option -Wno-ossharedptr-misuse
+    -Wno-vla -Werror -Wno-stdlibcxx-not-found)
+  base=(-target x86_64-apple-macos10.6 -nostdinc -fpascal-strings -fasm-blocks -fstrict-aliasing -fno-common -O0 "${defs[@]}" "${incs[@]}")
+  cflags=(-x c -std=c11 "${base[@]}" "${other[@]}")
+  cxxflags=(-x c++ -std=c++1y -fno-exceptions -fno-rtti -fapple-kext "${base[@]}" "${other[@]}")
+  aflags=(-x assembler-with-cpp -target x86_64-apple-macos10.6 -nostdinc "${defs[@]}" "${incs[@]}")
+  # Lilu writes the date of its build into its version: with the date of acidanthera's 1.7.2 archives it says what theirs says
+  local SOURCE_DATE_EPOCH; SOURCE_DATE_EPOCH=$(epoch "${LILU_DATE:?}"); export SOURCE_DATE_EPOCH
+  cat > "$O/Lilu_info.c" <<'EOC'
+#include <mach/mach_types.h>
+
+extern kern_return_t _start(kmod_info_t *ki, void *data);
+extern kern_return_t _stop(kmod_info_t *ki, void *data);
+__private_extern__ kern_return_t Lilu_kern_start(kmod_info_t *ki, void *data);
+__private_extern__ kern_return_t Lilu_kern_stop(kmod_info_t *ki, void *data);
+
+__attribute__((visibility("default"))) KMOD_EXPLICIT_DECL(as.vit9696.Lilu, "1.7.2", _start, _stop)
+__private_extern__ kmod_start_func_t *_realmain = Lilu_kern_start;
+__private_extern__ kmod_stop_func_t *_antimain = Lilu_kern_stop;
+__private_extern__ int _kext_apple_cc = __APPLE_CC__ ;
+EOC
+  : > "$LOGS/lilu.log"; objs=("$O/Lilu_info.o")
+  ( cd "$S" && "$CC" "${cflags[@]}" -c "$O/Lilu_info.c" -o "$O/Lilu_info.o" ) >> "$LOGS/lilu.log" 2>&1 || { tail -20 "$LOGS/lilu.log"; die "Lilu: kmod_info"; }
+  for f in "${sources[@]}"; do
+    o=$O/$(basename "${f%.*}").o; objs+=("$o")
+    case $f in *.cpp) cmd=("$CXX" "${cxxflags[@]}") ;; *.c) cmd=("$CC" "${cflags[@]}") ;; *) cmd=("$CC" "${aflags[@]}") ;; esac
+    ( cd "$S" && "${cmd[@]}" -c "$S/$f" -o "$o" ) >> "$LOGS/lilu.log" 2>&1 || { grep -B2 -A6 ' error:' "$LOGS/lilu.log" | head -30; die "Lilu: $f"; }
+  done
+  exe=$O/Lilu
+  ( cd "$S" && ZERO_AR_DATE=1 "$CXX" -target x86_64-apple-macos10.6 -nostdlib -static -Xlinker -kext -Xlinker -no_adhoc_codesign -L"$S/Lilu/Library" \
+      -L"$K/Library/universal" "${objs[@]}" -lkmodc++ -lkmod -lcc_kext -o "$exe" ) >> "$LOGS/lilu.log" 2>&1 || { tail -20 "$LOGS/lilu.log"; die "Lilu link"; }
+  strip -S "$exe"
+  nm "$exe" | grep -q ' _kmod_info$' || die "Lilu has no kmod_info"
+  ! nm -u "$exe" | grep -E -q 'chkstk_darwin|_objc_|___cxa_atexit|___gxx_personality' || die "Lilu imports what a kext cannot"
+  # The bundle is the one of acidanthera's 1.7.2 DEBUG archive, which fetch downloaded for its SDK, with this executable in place of
+  # its own: its Info.plist and its Resources, as on the tested machine. The plugins are compiled against that same SDK
+  rm -rf "$OUT/Lilu.kext"; cp -R "$LILU" "$OUT/Lilu.kext"; cp "$exe" "$OUT/Lilu.kext/Contents/MacOS/Lilu"; stamp "$OUT/Lilu.kext"
+  say "Lilu $(sha "$OUT/Lilu.kext/Contents/MacOS/Lilu") $(strings -a "$exe" | grep -E -m1 '^(DBG|REL)-[0-9]{3}-')"
+}
+
 stage_whateverxe() {   # the DEBUG build, as the one that ran: the boot-args in the config ask for its logs
   local W=$OBJ/whateverxe/src O=$OBJ/whateverxe/out
   export_tree "$SRC/WhateverXe" "$W"; rm -rf "$O"; mkdir -p "$O"
@@ -465,6 +532,45 @@ stage_hybridpm() {   # its own script, reproducible: on with -hpm in boot-args
   LILU_ZIP="$DEPS/lilu-debug.zip" bash "$W/build.sh" > "$LOGS/hybridpm.log" 2>&1 || { tail -20 "$LOGS/hybridpm.log"; die "HybridPM"; }
   rm -rf "$OUT/HybridPM.kext"; cp -R "$W/build/out/HybridPM.kext" "$OUT/HybridPM.kext"; stamp "$OUT/HybridPM.kext"
   say "HybridPM $(sha "$OUT/HybridPM.kext/Contents/MacOS/HybridPM")"
+}
+
+stage_hybridcores() {   # IntelHybridCores of rodgod-rr: background work on the E-cores, the two performance levels in hw.perflevel, the core types
+  # in Activity Monitor. A Lilu plugin injected by OpenCore, in place of CpuTopologyRebuild, with hcmode=4 in the boot-args. The commands of
+  # its own build.sh, with the Lilu SDK and MacKernelSDK above. That script compiles in a temporary folder and leaves the debug map in the
+  # kext, so the folder and the hour go into the file: here the paths are relative and the objects carry no time
+  local W=$OBJ/hybridcores/src O=$OBJ/hybridcores/out NAME=IntelHybridCores BID=io.github.rodgod-rr.IntelHybridCores K VER FLAGS CXXFLAGS X
+  export_tree "$SRC/IntelHybridCores" "$W" Info.plist src; K=$(mksdk)
+  rm -rf "$O"; mkdir -p "$O/obj" "$O/$NAME.kext/Contents/MacOS"; X=$O/$NAME.kext/Contents/MacOS/$NAME
+  VER=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$W/Info.plist")
+  # the date goes into the kext's version: this one gives the version of the binary that ran
+  local SOURCE_DATE_EPOCH; SOURCE_DATE_EPOCH=$(epoch "${INTELHYBRIDCORES_DATE:?}"); export SOURCE_DATE_EPOCH
+  FLAGS=(-arch x86_64 -mkernel -nostdinc -fno-builtin -fno-common -fno-stack-protector -mmacosx-version-min=13.0 -mmmx -msse -msse2
+    -DKERNEL -DKERNEL_PRIVATE -DDRIVER_PRIVATE -DAPPLE -DNeXT -DPRODUCT_NAME=$NAME -DMODULE_VERSION=$VER -isystem "$K/Headers" -I"$LILU_SDK" -O2 -g
+    -fdebug-compilation-dir=. -ffile-prefix-map="$W"=/IntelHybridCores -ffile-prefix-map="$K"=/MacKernelSDK -ffile-prefix-map="$LILU_SDK"=/Lilu
+    -ffile-prefix-map="$O/obj"=.)
+  CXXFLAGS=(-std=gnu++17 -nostdinc++ -fno-exceptions -fno-rtti -fapple-kext -Wall -Wno-deprecated-declarations -Wno-unused-parameter)
+  cat > "$O/obj/info.c" <<EOC
+#include <mach/mach_types.h>
+#include <mach/kmod.h>
+extern kern_return_t ${NAME}_kern_start(kmod_info_t *ki, void *data);
+extern kern_return_t ${NAME}_kern_stop(kmod_info_t *ki, void *data);
+__attribute__((visibility("default"))) KMOD_EXPLICIT_DECL($BID, "$VER", ${NAME}_kern_start, ${NAME}_kern_stop)
+__private_extern__ kmod_start_func_t *_realmain = 0;
+__private_extern__ kmod_stop_func_t *_antimain = 0;
+__private_extern__ int _kext_apple_cc = __APPLE_CC__;
+EOC
+  ( cd "$O/obj" && "$CC" "${FLAGS[@]}" -c info.c -o info.o &&
+    "$CXX" "${FLAGS[@]}" "${CXXFLAGS[@]}" -c "$W/src/IntelHybridCores.cpp" -o hc.o &&
+    "$CXX" "${FLAGS[@]}" "${CXXFLAGS[@]}" -c "$LILU_SDK/Library/plugin_start.cpp" -o plugin_start.o &&
+    ZERO_AR_DATE=1 "$CXX" -arch x86_64 -mkernel -nostdlib -static -Xlinker -kext -Xlinker -export_dynamic -Xlinker -oso_prefix -Xlinker "$O/obj/" \
+      -mmacosx-version-min=13.0 info.o hc.o plugin_start.o "$K/Library/x86_64/libkmod.a" -lcc_kext -o "$X" ) > "$LOGS/hybridcores.log" 2>&1 \
+    || { tail -20 "$LOGS/hybridcores.log"; die "IntelHybridCores"; }
+  cp "$W/Info.plist" "$O/$NAME.kext/Contents/Info.plist"
+  nm "$X" | grep -q ' _kmod_info$' || die "IntelHybridCores has no kmod_info"
+  ! nm -ap "$X" | grep -E ' (SO|OSO) ' | grep -q -F "$WORK" || die "IntelHybridCores: the build folder is in the debug map"
+  stamp "$O/$NAME.kext"; codesign -f -s - "$O/$NAME.kext" 2> /dev/null && codesign --verify "$O/$NAME.kext" || die "IntelHybridCores signature"
+  rm -rf "${OUT:?}/$NAME.kext"; cp -R "$O/$NAME.kext" "$OUT/$NAME.kext"
+  say "IntelHybridCores $(sha "$OUT/$NAME.kext/Contents/MacOS/$NAME")"
 }
 
 stage_applealc() {   # AppleALC 1.9.8 with ALC245 layouts 66 and 67. The steps follow AppleALC.xcodeproj, Release configuration
@@ -626,6 +732,8 @@ stage_btleadv() {   # BTLEAdvFixup of ForbiddenItlwm: Bluetooth LE advertising, 
   # information, whose paths and times the linker hashes into the UUID: relative paths and no times, so every build gives the same file
   local W=$OBJ/btleadv/src O=$OBJ/btleadv/out NAME=BTLEAdvFixup VERSION=0.9.0 IDENT=org.forbiddenitlwm.BTLEAdvFixup K FLAGS EXE
   export_tree "$SRC/ForbiddenItlwm" "$W" BTLEAdvFixup; K=$(mksdk)
+  # the date goes into Lilu's kextVersion: this one gives the version of the binary that ran
+  local SOURCE_DATE_EPOCH; SOURCE_DATE_EPOCH=$(epoch "${BTLEADV_DATE:?}"); export SOURCE_DATE_EPOCH
   rm -rf "$O"; mkdir -p "$O/obj" "$O/$NAME.kext/Contents/MacOS"; EXE=$O/$NAME.kext/Contents/MacOS/$NAME
   FLAGS=(-arch x86_64 -std=c++17 -O2 -g -fapple-kext -fno-exceptions -fno-rtti -fno-stack-protector -fno-builtin
     -fno-asynchronous-unwind-tables -mno-red-zone -nostdinc -DKERNEL -DKERNEL_PRIVATE -D__APPLE__ -D__MACH__
@@ -674,7 +782,7 @@ stage_usbkeeper() {   # USBDiskKeeper: the USB disk OpenCore starts from stays a
   say "USBDiskKeeper $(sha "$OUT/USBDiskKeeper.kext/Contents/MacOS/USBDiskKeeper")"
 }
 
-ALL="rm nvrm nvrmfb nvaccel nvrmagdc nmhda plugin translator nvk dlss nvenc latsof nitrosense smcnvidiagpu whateverxe hybridpm applealc idisphda mtkwlan mtkbt btleadv nmappfree usbkeeper"
+ALL="rm nvrm nvrmfb nvaccel nvrmagdc nmhda plugin translator nvk dlss nvenc latsof nitrosense smcnvidiagpu lilu whateverxe hybridpm hybridcores applealc idisphda mtkwlan mtkbt btleadv nmappfree usbkeeper"
 [ $# -gt 0 ] || set -- $ALL
 for s in "$@"; do
   case " $ALL " in *" $s "*) ;; *) die "no stage $s; stages: $ALL" ;; esac

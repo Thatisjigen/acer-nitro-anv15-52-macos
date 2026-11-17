@@ -36,10 +36,12 @@ MISSING_DEFAULTS = {
 
 # OpenCore does not read comments: these say what each kext is here.
 KEXT_COMMENTS = {
-    'Lilu.kext': 'Lilu 1.7.2 DEBUG, needed by the DEBUG build of WhateverXe',
+    'Lilu.kext': 'Lilu 1.7.2 DEBUG, fork branch acer/current: 16 KiB for the trampolines of its plugins instead of 4, which the kexts here fill',
     'AppleALC.kext': 'AppleALC 1.9.8 with ALC245 layouts 66 and 67, fork branch acer/current',
     'NMHDA.kext': 'NMHDA of NullMoth, fork branch acer/current: HDMI audio of the RTX, 10DE:22EC; nmhdavol=1 gives the audio of the displays volume and mute',
     'AMFIPass.kext': 'AMFIPass 1.4.1 Mod, from WhateverXe-Graphics extras/: off, it has nothing to do with the AMFI boot-args',
+    'CpuTopologyRebuild.kext': 'CpuTopologyRebuild 2.0.2: off, IntelHybridCores takes its place and the two do not go together',
+    'IntelHybridCores.kext': 'IntelHybridCores 0.1.0 of rodgod-rr, in place of CpuTopologyRebuild: background work on the E-cores (hcmode=4), hw.perflevel; needs Lilu',
     'SMCLightSensor.kext': 'VirtualSMC 1.3.9: off, it finds no light sensor on this laptop',
     'SMCProcessor.kext': 'VirtualSMC 1.3.9: off, it finds no processor it supports on this laptop',
     'SMCSuperIO.kext': 'VirtualSMC 1.3.9: off, it finds no SuperIO chip on this laptop',
@@ -47,8 +49,8 @@ KEXT_COMMENTS = {
     'VoodooPS2Controller.kext/Contents/PlugIns/VoodooPS2Trackpad.kext': 'VoodooPS2 2.3.8: off, the trackpad is on I2C',
     'SMCNvidiaGPU.kext': 'RTX sensors for VirtualSMC, fork branch acer/current; built together with NVRM',
     'WhateverXe.kext': 'WhateverXe 0.8.2 DEBUG, fork branch acer/current; in place of WhateverGreen',
-    'HybridPM.kext': 'XE-PM (JulioNectar, TSNPL 1.0) as a Lilu plugin; on by default, -nohpm in boot-args turns it off; autonomous HWP on by default, hpmauto=0 turns it off',
-    'NitroEC.kext': 'NitroEC, fork branch acer/current: EC window 0xFE708500',
+    'HybridPM.kext': 'XE-PM (JulioNectar, TSNPL 1.0) as a Lilu plugin; on by default, -nohpm in boot-args turns it off; autonomous HWP on by default, hpmauto=0 turns it off; EPP 64, hpmepp=N for another',
+    'NitroEC.kext': 'NitroEC, fork branch acer/current: EC window 0xFE708500; puts the fans back to Auto when nitrod stops answering',
     'AirportItlwm.kext': 'AirportItlwm 2.4.0-alpha laobamac: only for an Intel card, in place of the MT7920',
     'IntelBluetoothFirmware.kext': 'Intel Bluetooth 2.5.2 lshbluesky: only for an Intel card',
     'IntelBTPatcher.kext': 'Intel Bluetooth 2.5.2 lshbluesky: only for an Intel card',
@@ -75,6 +77,18 @@ BOOT_ARGS_LEFT_OUT = ['-nmappfreedbg', '-liludbg', 'liludump=90']
 BOOT_ARGS_ADDED = []
 # An experiment still listed, disabled, in the config this comes from
 KEXTS_LEFT_OUT = []
+# Sleep in S0 (Deep Idle) with the power button as its wake source, which the config this comes from carries as a test: two tables, and
+# the rename of the Acer DSDT's EC0._QE0 that one of them needs, found by its bytes. No such sleep has been tried, and SSDT-DEEPIDLE
+# comes from another project whose licence was not read: none of it is published
+ACPI_LEFT_OUT = ['SSDT-DEEPIDLE.aml', 'SSDT-PWRB-QE0.aml']
+ACPI_PATCHES_LEFT_OUT = [bytes.fromhex('14265f514530')]
+
+
+def leave_out(cfg):
+    """What is in the source config and is not published: make drops it, compare does not count it."""
+    cfg['Kernel']['Add'] = [k for k in cfg['Kernel']['Add'] if k['BundlePath'] not in KEXTS_LEFT_OUT]
+    cfg['ACPI']['Add'] = [t for t in cfg['ACPI']['Add'] if t['Path'] not in ACPI_LEFT_OUT]
+    cfg['ACPI']['Patch'] = [p for p in cfg['ACPI']['Patch'] if bytes(p['Find']) not in ACPI_PATCHES_LEFT_OUT]
 
 
 def clean_comments(node):
@@ -95,7 +109,7 @@ def clean_comments(node):
 def make(source, target, profile):
     with open(source, 'rb') as f:
         cfg = plistlib.load(f)
-    cfg['Kernel']['Add'] = [k for k in cfg['Kernel']['Add'] if k['BundlePath'] not in KEXTS_LEFT_OUT]
+    leave_out(cfg)
     for key in [k for k in cfg if k.startswith('#')]:
         del cfg[key]
     generic = cfg['PlatformInfo']['Generic']
@@ -154,7 +168,7 @@ def compare(source, target):
     uuid = '7C436110-AB2A-4BBB-A880-FE41995C9F82'
     args = a['NVRAM']['Add'][uuid]['boot-args'].split()
     a['NVRAM']['Add'][uuid]['boot-args'] = ' '.join([x for x in args if x not in BOOT_ARGS_LEFT_OUT] + [x for x in BOOT_ARGS_ADDED if x not in args])
-    a['Kernel']['Add'] = [k for k in a['Kernel']['Add'] if k['BundlePath'] not in KEXTS_LEFT_OUT]
+    leave_out(a)
     report = []
     walk(a, b, '', report)
     expected = {'/'.join(('',) + p) for p in MISSING_DEFAULTS}

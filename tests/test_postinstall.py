@@ -27,7 +27,8 @@ ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / 'postinstall/postinstall.py'
 REAL = json.loads((ROOT / 'postinstall/manifest.json').read_text())
 KEXTS = ['NVRM', 'NVRMFB', 'NVAccel', 'NVRMAGDC']
-FOR_EFI = ['NMHDA', 'NitroEC', 'SMCNvidiaGPU', 'WhateverXe', 'HybridPM', 'AppleALC', 'IDispHDA', 'AirportMtkWlan', 'SimpleMtkBtPatcher', 'BTLEAdvFixup', 'NMAppFree', 'USBDiskKeeper']
+FOR_EFI = ['Lilu', 'NMHDA', 'NitroEC', 'SMCNvidiaGPU', 'WhateverXe', 'HybridPM', 'IntelHybridCores', 'AppleALC', 'IDispHDA', 'AirportMtkWlan', 'SimpleMtkBtPatcher', 'BTLEAdvFixup',
+           'NMAppFree', 'USBDiskKeeper']
 
 
 def sha(path):
@@ -117,7 +118,8 @@ class Fixture:
               '<?xml version="1.0" encoding="UTF-8"?><plist version="1.0"><dict><key>CFBundleExecutable</key><string>NVMTLDriver</string>'
               '<key>CFBundleIdentifier</key><string>com.nullmoth.NVMTLDriver</string></dict></plist>\n')
         nvk = write(pkg / 'Library/GPUBundles/nvmtl/libvulkan_nouveau.dylib', 'nvk\n')
-        write(pkg / 'Library/GPUBundles/nvmtl/nvrm610.conf', 'NVMTL_RES2_WS=1\n')
+        # with the line an earlier version of this install added, as if it had been kept: the decoder step takes it out
+        write(pkg / 'Library/GPUBundles/nvmtl/nvrm610.conf', 'NVMTL_RES2_WS=1\nNVMTL_NVENCVT=com.apple.WebKit.GPU\nNVMTL_NVENCVT_RATING=1100\n')
         write(pkg / 'Library/GPUBundles/nvmtl-allow.txt', '*\n')
         write(pkg / 'Library/NullMoth/kexts/26/NVAccel.kext/Contents/MacOS/NVAccel', 'release NVAccel\n')
         # what NullMoth's installer writes beside the driver, and the nullmoth step removes
@@ -201,7 +203,8 @@ class Install(unittest.TestCase):
         self.assertEqual(sha(macos / 'libnvencvt.dylib'), sha(self.f.work / 'out/bundle/libnvencvt.dylib'))
         self.assertEqual(os.readlink(macos / 'libnvdec_hevc.dylib'), 'libnvdec_h264.dylib')
         self.assertEqual(sha(self.root / 'Library/GPUBundles/nvmtl/libvulkan_nouveau.dylib'), sha(self.f.work / 'out/nvmtl/libvulkan_nouveau.dylib'))
-        self.assertEqual((self.root / 'Library/GPUBundles/nvmtl/nvrm610.conf').read_text(), 'NVMTL_RES2_WS=1\nNVMTL_NVENCVT=com.apple.WebKit.GPU\n')
+        self.assertEqual((self.root / 'Library/GPUBundles/nvmtl/nvrm610.conf').read_text(), 'NVMTL_RES2_WS=1\nNVMTL_NVENCVT_RATING=1100\n',
+                         'only the process list of an earlier install goes')
         self.assertTrue((self.root / 'Library/Displays/Contents/Resources/Overrides/DisplayVendorID-e77/DisplayProductID-1513').is_file())
         self.assertEqual(subprocess.run(['/usr/bin/codesign', '--verify', str(macos.parent.parent)], capture_output=True).returncode, 0)
         intel = self.root / 'Library/GPUBundles/AppleIntelTGLGraphicsMTLDriver.bundle/Contents/MacOS'

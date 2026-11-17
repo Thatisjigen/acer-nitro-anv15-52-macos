@@ -142,7 +142,7 @@ sudo python3 postinstall/postinstall.py install --go
 
 ## 9. First boot
 
-Shut down, do not restart. In rEFInd choose **OpenCore**, not **OpenCore install**, and in the picker the macOS volume: OpenCore does not start it by itself. The first boot can stop for up to a minute at "PCI configuration end" while the RTX starts, and it can stay slow until login: here the external monitor stayed on the Apple logo until then the first time, not the second. If macOS asks you to allow extensions, do it in System Settings › Privacy & Security, and restart.
+Shut down, do not restart. In rEFInd choose **OpenCore**, not **OpenCore install**. In the picker choose the macOS volume, or leave it: after 5 seconds OpenCore starts the default entry. Space shows the entries it hides, the recovery and the NVRAM reset. The first boot can stop for up to a minute at "PCI configuration end" while the RTX starts, and it can stay slow until login: here the external monitor stayed on the Apple logo until then the first time, not the second. If macOS asks you to allow extensions, do it in System Settings › Privacy & Security, and restart.
 
 At the desktop:
 

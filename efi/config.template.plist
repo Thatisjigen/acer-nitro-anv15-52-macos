@@ -254,7 +254,7 @@
 				<key>BundlePath</key>
 				<string>Lilu.kext</string>
 				<key>Comment</key>
-				<string>Lilu 1.7.2 DEBUG, needed by the DEBUG build of WhateverXe</string>
+				<string>Lilu 1.7.2 DEBUG, fork branch acer/current: 16 KiB for the trampolines of its plugins instead of 4, which the kexts here fill</string>
 				<key>Enabled</key>
 				<true/>
 				<key>ExecutablePath</key>
@@ -398,15 +398,33 @@
 				<key>BundlePath</key>
 				<string>CpuTopologyRebuild.kext</string>
 				<key>Comment</key>
-				<string>V2.0.2</string>
+				<string>CpuTopologyRebuild 2.0.2: off, IntelHybridCores takes its place and the two do not go together</string>
 				<key>Enabled</key>
-				<true/>
+				<false/>
 				<key>ExecutablePath</key>
 				<string>Contents/MacOS/CpuTopologyRebuild</string>
 				<key>MaxKernel</key>
 				<string></string>
 				<key>MinKernel</key>
 				<string></string>
+				<key>PlistPath</key>
+				<string>Contents/Info.plist</string>
+			</dict>
+			<dict>
+				<key>Arch</key>
+				<string>x86_64</string>
+				<key>BundlePath</key>
+				<string>IntelHybridCores.kext</string>
+				<key>Comment</key>
+				<string>IntelHybridCores 0.1.0 of rodgod-rr, in place of CpuTopologyRebuild: background work on the E-cores (hcmode=4), hw.perflevel; needs Lilu</string>
+				<key>Enabled</key>
+				<true/>
+				<key>ExecutablePath</key>
+				<string>Contents/MacOS/IntelHybridCores</string>
+				<key>MaxKernel</key>
+				<string>25.99.99</string>
+				<key>MinKernel</key>
+				<string>25.0.0</string>
 				<key>PlistPath</key>
 				<string>Contents/Info.plist</string>
 			</dict>
@@ -1064,7 +1082,7 @@
 				<key>BundlePath</key>
 				<string>HybridPM.kext</string>
 				<key>Comment</key>
-				<string>XE-PM (JulioNectar, TSNPL 1.0) as a Lilu plugin; on by default, -nohpm in boot-args turns it off; autonomous HWP on by default, hpmauto=0 turns it off</string>
+				<string>XE-PM (JulioNectar, TSNPL 1.0) as a Lilu plugin; on by default, -nohpm in boot-args turns it off; autonomous HWP on by default, hpmauto=0 turns it off; EPP 64, hpmepp=N for another</string>
 				<key>Enabled</key>
 				<true/>
 				<key>ExecutablePath</key>
@@ -1082,7 +1100,7 @@
 				<key>BundlePath</key>
 				<string>NitroEC.kext</string>
 				<key>Comment</key>
-				<string>NitroEC, fork branch acer/current: EC window 0xFE708500</string>
+				<string>NitroEC, fork branch acer/current: EC window 0xFE708500; puts the fans back to Auto when nitrod stops answering</string>
 				<key>Enabled</key>
 				<true/>
 				<key>ExecutablePath</key>
@@ -1318,7 +1336,7 @@
 			<key>PanicNoKextDump</key>
 			<true/>
 			<key>PowerTimeoutKernelPanic</key>
-			<true/>
+			<false/>
 			<key>ProvideCurrentCpuInfo</key>
 			<true/>
 			<key>SetApfsTrimTimeout</key>
@@ -1355,7 +1373,7 @@
 			<key>HibernateSkipsPicker</key>
 			<false/>
 			<key>HideAuxiliary</key>
-			<false/>
+			<true/>
 			<key>LauncherOption</key>
 			<string>Disabled</string>
 			<key>LauncherPath</key>
@@ -1375,7 +1393,7 @@
 			<key>TakeoffDelay</key>
 			<integer>0</integer>
 			<key>Timeout</key>
-			<integer>0</integer>
+			<integer>5</integer>
 			<key>InstanceIdentifier</key>
 			<string></string>
 		</dict>
@@ -1425,7 +1443,7 @@
 			<data>
 			</data>
 			<key>ScanPolicy</key>
-			<integer>2621442</integer>
+			<integer>2621699</integer>
 			<key>SecureBootModel</key>
 			<string>Disabled</string>
 			<key>Vault</key>
@@ -1507,7 +1525,7 @@
 				AAAAAAAAAAAAAAAAAAA=
 				</data>
 				<key>boot-args</key>
-				<string>keepsyms=1 ctrsmt=full amfi_get_out_of_my_way=0x1 amfi=0x80 ipc_control_port_options=0 -allow3d -disablegfxfirmware nvrmaspm=1 nvrmfbddc=1 nvfbkeepfront=1 nvfb10bit=1 nvfbhdr=1 nvfbvrr=1 -wex-va-renderer -wex-nv-video nvwallpaper=1 nmhdavol=1 -mtkawdl</string>
+				<string>keepsyms=1 amfi_get_out_of_my_way=0x1 amfi=0x80 ipc_control_port_options=0 -allow3d -disablegfxfirmware nvrmaspm=1 nvrmfbddc=1 nvfbkeepfront=1 nvfb10bit=1 nvfbhdr=1 nvfbvrr=1 -wex-va-renderer -wex-nv-video nvwallpaper=1 nmhdavol=1 -mtkawdl hcmode=4 shda-lang=it</string>
 				<key>csr-active-config</key>
 				<data>
 				QwoAAA==

@@ -19,7 +19,7 @@ URLs and hashes are in [efi/sources.lock.json](../efi/sources.lock.json) and [po
 
 | Component | License | How this repository treats it |
 | --- | --- | --- |
-| OpenCore, Lilu, VirtualSMC, WhateverGreen, RestrictEvents, BrightnessKeys | BSD-3-Clause | Downloaded from their releases |
+| OpenCore, Lilu, VirtualSMC, WhateverGreen, RestrictEvents, BrightnessKeys | BSD-3-Clause | Downloaded from their releases. Lilu: 1.7.3 for the `install` profile, and the 1.7.2 DEBUG release for its SDK, which the Lilu plugins are compiled against, and for the bundle that the Lilu compiled from the fork goes into |
 | VoodooI2C | GPL-3.0 | Downloaded |
 | itlwm, AirportItlwm | GPL-3.0 | Downloaded |
 | BlueToolFixup (BrcmPatchRAM) | GPL-2.0 | Downloaded |
@@ -47,14 +47,16 @@ URLs and hashes are in [efi/sources.lock.json](../efi/sources.lock.json) and [po
 | nvidia-macos-driver | PolyForm Noncommercial 1.0.0; translator LGPL-3.0 | **The compiled kexts, plugin and NVK are for noncommercial use only:** NVK is Mesa's MIT code with the fork's patches. The branch also holds 25 commits by kitsuneislife from [nmx-intel](https://github.com/kitsuneislife/nmx-intel), 4 in the NVAccel compiled here and 21 in NMIntelFB, which is not installed here. That project states no license: the author agreed to their use, with nothing in writing |
 | NvGfx (`darwin.mk`, to compile NVIDIA's RM and NVKMS for macOS) | PolyForm Noncommercial 1.0.0 | Not redistributed |
 | HybridPM | Thou Shalt Not Profit 1.0 | XE-PM code by JulioNectar: non-profit use, same license |
-| WhateverXe, AppleALC | BSD-3-Clause | |
+| WhateverXe, AppleALC, Lilu | BSD-3-Clause | Lilu: acidanthera's 1.7.2 and one commit |
 | SimpleMtkWlan | GPL-2.0 | Without its firmware, which is generated at build |
 | SimpleMtkBtFw (the patcher) | GPL-3.0 | |
 | LatSOF-Audio, nvenc, SMCNvidiaGPU | MIT | |
+| IntelHybridCores | MIT | By rodgod-rr (Rodrigo Lacerda Rangel Santos): his `main`, unchanged |
+| ForbiddenItlwm | GPL-3.0 for BTLEAdvFixup, the only part compiled | |
 | NitroSense-macOS | GPL-3.0 | |
 | NMAppFree | BSD-3-Clause | Not a fork: written for this laptop, in its own repository |
 | USBKeeper (USBDiskKeeper) | None stated yet | Not a fork: written for this laptop, in its own repository, which has no license file yet. Compiled on your machine, not redistributed |
 
 **macOS** belongs to Apple, and its license says it runs on Apple hardware. This repository does not contain macOS: the recovery is downloaded from Apple. Decide what you are allowed to do.
 
-Licenses were checked on 3 November 2026; where it says "see each project" they were not read one by one, because nothing of those projects is redistributed here.
+Licenses were checked on 3 November 2026, Lilu's and IntelHybridCores' on 17 November 2026; where it says "see each project" they were not read one by one, because nothing of those projects is redistributed here.
