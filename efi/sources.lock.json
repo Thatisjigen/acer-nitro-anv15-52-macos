@@ -342,7 +342,7 @@
    },
    "WhateverXe": {
     "compiled": true,
-    "tested_binary_sha16": "c72edcf4b2a3a230"
+    "tested_binary_sha16": "c1bafae5a44bd051"
    },
    "XHCI-unsupported": {
     "local": "efi/kexts/XHCI-unsupported.kext",
@@ -421,7 +421,7 @@
    },
    "AirportMtkWlan": {
     "compiled": true,
-    "tested_binary_sha16": "71e4ba742ad41fb0"
+    "tested_binary_sha16": "6d68a32b870467cb"
    },
    "IDispHDA": {
     "compiled": true,

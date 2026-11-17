@@ -320,8 +320,9 @@ stage_nvk() { (   # in a subshell: the toolchain of NVK stays out of the stages 
   ln -s "$O/ogkm" "$S/src/nouveau/vulkan/nvkmd/nvrm/open-gpu-kernel-modules"
   # four commits of Mesa main for NAK, NVK's shader compiler, on SM120 (the RTX 50 series), after NullMoth's chain, as Mesa published
   # them with their authors: the latency generator change they need first, a missing scoreboard for uniform Ldcg, the ready cycle of
-  # the prepass scheduler and the imma/hmma latencies
-  for f in "$HERE"/nvk-mesa/*.patch; do
+  # the prepass scheduler and the imma/hmma latencies. Last, the fork's lock around the table of CPU mappings of NVK's NVRM back
+  # end, which two threads working on two memory objects could change at the same time: it belongs to no chain of build_nvk.sh
+  for f in "$HERE"/nvk-mesa/*.patch "$P/nvk-mappings-lock.patch"; do
     o=$(patch -p1 --verbose --no-backup-if-mismatch -F0 -d "$S" < "$f" 2>&1) || { echo "$o" | tail -5; die "$f does not apply"; }
     echo "$o" >> "$LOGS/nvk-patches.log"; ! grep -q -i fuzz <<< "$o" || die "$f applies only with fuzz"
   done

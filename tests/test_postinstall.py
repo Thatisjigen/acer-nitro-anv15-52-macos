@@ -11,7 +11,6 @@ import hashlib
 import importlib.util
 import json
 import os
-import plistlib
 import shutil
 import signal
 import stat
@@ -142,8 +141,6 @@ class Fixture:
         metal = write(payload / 'Library/GPUBundles/AppleIntelTGLGraphicsMTLDriver.bundle/Contents/MacOS/AppleIntelTGLGraphicsMTLDriver', 'stock metal\n')
         impostor = write(payload / 'Library/GPUBundles/AppleIntelTGLGraphicsMTLDriver.bundle/Contents/MacOS/impostor.dylib', 'impostor of Graphics\n')
         write(payload / 'Library/GPUBundles/AppleIntelTGLGraphicsMTLDriver.bundle/Contents/MacOS/descriptor.dylib', 'descriptor\n')
-        write(payload / 'Library/GPUBundles/AppleIntelTGLGraphicsMTLDriver.bundle/Contents/Info.plist', plistlib.dumps(
-            {'CFBundleExecutable': 'AppleIntelTGLGraphicsMTLDriver', 'MPSIntelPluginFeatureList': {'MPSIntelCNNPoolingEnable': 1, 'MPSIntelPluginEnable': 1}}).decode())
         write(payload / 'Library/GPUBundles/XeOpenCL/x', 'x\n')
         common = self.base / 'Common.pkg'
         subprocess.run(['/usr/bin/pkgbuild', '--quiet', '--root', str(payload), '--identifier', 'test.Common', '--version', '1', str(common)], check=True)
@@ -213,10 +210,6 @@ class Install(unittest.TestCase):
         intel = self.root / 'Library/GPUBundles/AppleIntelTGLGraphicsMTLDriver.bundle/Contents/MacOS'
         self.assertEqual((intel / 'AppleIntelTGLGraphicsMTLDriver').read_text(), 'stock metal\n')
         self.assertEqual((intel / 'impostor.dylib').read_text(), 'impostor of Graphics\n', 'the bridge stays the one of Graphics')
-        self.assertEqual(plistlib.loads((intel.parent / 'Info.plist').read_bytes()),
-                         {'CFBundleExecutable': 'AppleIntelTGLGraphicsMTLDriver', 'MPSIntelPluginFeatureList': {'MPSIntelCNNPoolingEnable': 1, 'MPSIntelPluginEnable': 0}},
-                         "only the master switch of Intel's MPS plug-in goes to 0")
-        self.assertIn('plug-in off', self.f.run('state').stdout)
         self.assertEqual(stat.S_IMODE(os.stat(ext / 'NVRM.kext/Contents/MacOS/NVRM').st_mode), 0o755)
         self.assertEqual((self.root / 'Library/KernelCollections/AuxiliaryKernelExtensions.kc').read_text(), 'collection of the auxkc step\n')
         self.assertTrue((self.root / 'Library/LaunchDaemons/com.nitrosense.nitrod.plist').exists())
@@ -458,6 +451,30 @@ class Reading(unittest.TestCase):
             rel = 'SMCNvidiaGPU.kext/Contents/MacOS/SMCNvidiaGPU'
             heads = {'SMCNvidiaGPU': self.m.MANIFEST['forks']['SMCNvidiaGPU']['tested_commit'], 'nvidia-macos-driver': 'b' * 40}
             self.assertIn('newer than what was tested', self.m.against_tested(rel, f.name, heads))
+
+    def test_the_metal_driver_is_known_by_what_whateverxe_does_not_correct(self):
+        stock = bytes(range(256)) * 96   # six pages
+        without = bytearray(stock)
+        for offset in (8192, 16384):
+            without[offset:offset + 4096] = bytes(4096)
+        real = self.m.MANIFEST['installed_files']
+        self.m.MANIFEST['installed_files'] = dict(real, graphics_metal=hashlib.sha256(stock).hexdigest(), graphics_metal_pages={
+            'offsets': [8192, 16384], 'sha256_without_them': hashlib.sha256(without).hexdigest()})
+        try:
+            with tempfile.TemporaryDirectory() as t:
+                path = Path(t) / 'driver'
+                path.write_bytes(stock)
+                self.assertEqual(self.m.metal_driver(str(path))[1], 'of Graphics 0.4.4')
+                read = bytearray(stock)
+                read[8192 + 100] ^= 0xff   # one of the two pages, as a read returns it once it is corrected in memory
+                path.write_bytes(read)
+                self.assertIn('corrects in memory', self.m.metal_driver(str(path))[1])
+                read[100] ^= 0xff   # a byte outside them: another file
+                path.write_bytes(read)
+                self.assertEqual(self.m.metal_driver(str(path))[1], '')
+                self.assertEqual(self.m.metal_driver(str(path) + '-absent'), ('absent', ''))
+        finally:
+            self.m.MANIFEST['installed_files'] = real
 
     def test_a_bundle_id_is_not_found_inside_a_longer_one(self):
         text = '  1  0 0x1 0x2 0x3 com.nullmoth.NVRMFB (1.0) <1 2>\n  2  0 0x1 0x2 0x3 com.apple.driver.AppleIntelTGLGraphicsFramebuffer (1.0)\n'

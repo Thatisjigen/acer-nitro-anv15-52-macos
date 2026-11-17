@@ -17,13 +17,13 @@
    "url": "https://github.com/Thatisjigen/nvidia-macos-driver.git",
    "ref": "acer/current",
    "license": "PolyForm Noncommercial 1.0.0; translator LGPL-3.0",
-   "tested_commit": "a29ea238a5db0c250d6dbfc7330786e65e6270f3"
+   "tested_commit": "8fdfb6695d57bf30a5ced5db6ab2ea8d4232e61c"
   },
   "WhateverXe": {
    "url": "https://github.com/Thatisjigen/WhateverXe.git",
    "ref": "acer/current",
    "license": "BSD-3-Clause",
-   "tested_commit": "e8c222d05ce5bc4a9adf80183b183e212125efc9"
+   "tested_commit": "8aae74a2ee97c012121b9f2e406d7be1fa489e6e"
   },
   "nvenc": {
    "url": "https://github.com/Thatisjigen/nvenc.git",
@@ -35,7 +35,7 @@
    "url": "https://github.com/Thatisjigen/NitroSense-macOS.git",
    "ref": "acer/current",
    "license": "GPL-3.0",
-   "tested_commit": "f115e41273256d7e73141410a8f7e0a294ce80db"
+   "tested_commit": "1a54ff38d529a31ddcef3db54da41115daf3978b"
   },
   "SMCNvidiaGPU": {
    "url": "https://github.com/Thatisjigen/SMCNvidiaGPU.git",
@@ -64,7 +64,7 @@
   "SimpleMtkWlan": {
    "url": "https://github.com/Thatisjigen/SimpleMtkWlan.git",
    "ref": "acer/current",
-   "tested_commit": "fced826e66a78f050f0baf82aa04405891e9a711",
+   "tested_commit": "ebca16d4bdfc09aa1d12a03b1a8ebe322205684b",
    "license": "GPL-2.0"
   },
   "SimpleMtkBtFw": {
@@ -300,6 +300,14 @@
   },
   "nvk_in": "e614521bd06d1c17a1996db977e7faec6749c0fc7da7dc55f0d79dafbad10e52",
   "graphics_metal": "25b6c72ee23fb71f91384982fb591d6d1e514c73be3fea99831b4559d0ec4faa",
+  "graphics_metal_pages": {
+   "offsets": [
+    176128,
+    229376
+   ],
+   "sha256_without_them": "0bc204319901810bd0672f8831b0cc1784372df382b39b47519bb4b2b02bab95",
+   "note": "WhateverXe corrects these two 4096-byte pages of the Metal driver in memory: the switch of Intel's plug-in for Metal Performance Shaders and the class of thread-group memory. A read of the file returns them corrected while they are in the file cache, so state and verify also know the driver by its hash with the two pages zeroed"
+  },
   "graphics_impostor": "cd415a30e111d9ad48e6dd1936d848c1e809821aa3770c93ae7c759a4454567c",
   "nullmoth_firmware": {
    "nvidia/620.70.06/gsp_ga10x.bin": "26a32926507e19e8c92911ed6a9b7981c9699c7a10bb78cc76b4f4abcbff84b6",
@@ -377,11 +385,11 @@
    "sha256": "ce79584f3d748e72047a1a57a4dabc3dbc70ffb9a2a7245def49b35bfae7aa26"
   },
   "WhateverXe.kext/Contents/MacOS/WhateverXe": {
-   "sha256": "c72edcf4b2a3a2304a5250cb21c1a4538ef7c554e865436a105d282d0e40324a",
-   "sha256_without_uuid": "326d5395014abbc2f296464f6ebe332caaf9c468ba6d504752d9aaa292966ede",
+   "sha256": "c1bafae5a44bd0518a87ec4dfebb0cb4ba269821ff2112c39055e4c5f129c929",
+   "sha256_without_uuid": "74b50246246abf5d1f2d0dbb2f9e1d0b2dc61a0ee47a795e0b6d8122ae053727",
    "note": "same code; what runs has the old names of its diagnostics, its IORegistry keys among them. The UUID changes at every build: the linker hashes the paths and times of the objects into it before they are stripped",
-   "reference_sha256": "c177242c0b44917af4f402701983d867c64e47328c8301ff9c64887da1b4e3c0",
-   "reference_sha256_without_uuid": "d8cce0c12a8ee65bf8dfafa380dc495dbab80026f000533146c483714f292bf9"
+   "reference_sha256": "129fdf7647043af245fc25cf501fc8b4e00744a4e267e5711632d483bcfcdee9",
+   "reference_sha256_without_uuid": "01e1e24a0d434aa18d6edcec5c9c161aa06b2545c60edb1bd43acd5a7f02955c"
   },
   "HybridPM.kext/Contents/MacOS/HybridPM": {
    "sha256": "121a83de159159af6c547828fda9bb2eb779166951e9ae2e05deaec36ff66610"
@@ -398,9 +406,9 @@
    "sha256": "d6e59bfcffcd7f9d362f42662a364eb85374b9520dc413d8971bdb79bcdee0cc"
   },
   "AirportMtkWlan.kext/Contents/MacOS/AirportMtkWlan": {
-   "sha256": "71e4ba742ad41fb004cece81cbfbb5e8f4e7d4a89227b3619f8e721440e0c573",
+   "sha256": "6d68a32b870467cbf066949a3b90b80f96517e3bba896b18ecc9f6007ceedba1",
    "note": "the one that runs carries the short commit of the local branch it was built from in its version string; built with that string it is the same file",
-   "reference_sha256": "601c73d51388ff1036d0a041f7aa218445dc61f4f916f94c52c9a8d98eb38650"
+   "reference_sha256": "9ab3768fb11b6b02df5742662207d9ca9db243d11c47d0c1dc336b7ff555e4d3"
   },
   "SimpleMtkBtPatcher.kext/Contents/MacOS/SimpleMtkBtPatcher": {
    "sha256": "1917bcab0b1e8f757e78398736e1fe209875dc27cf2b20255dfc827859c7beb0"
@@ -419,7 +427,7 @@
    "sha256": "a4bc9997b22c062ab863e2f1f9b4677d88385f6f879930c3dae6b6b43789a839"
   },
   "nvmtl/libvulkan_nouveau.dylib": {
-   "sha256": "0dbf26efed9e01c693223e223b2ce99122049cb435e3780de177f49a28ec143b"
+   "sha256": "ed365d4d4cf334b2be6ee3f0cb0001e62da7d203492f4cb95356b8ed96aad049"
   },
   "dlss-pkg/dlss_fetch.sh": {
    "sha256": "01954a12152a643c3febef250a5d630bbeaac139e38cd490d2d1e30f87db34e0"
