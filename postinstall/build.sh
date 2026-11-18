@@ -453,13 +453,14 @@ stage_smcnvidiagpu() {   # has to match the NVRM above: it is given that binary,
   say "SMCNvidiaGPU $(sha "$OUT/SMCNvidiaGPU.kext/Contents/MacOS/SMCNvidiaGPU")"
 }
 
-stage_lilu() {   # Lilu 1.7.2 DEBUG from the fork: acidanthera's tag and one commit, which gives the trampolines 16 KiB instead of 4. Every function a
+stage_lilu() {   # Lilu 1.7.2 RELEASE from the fork: acidanthera's tag and one commit, which gives the trampolines 16 KiB instead of 4. Every function a
   # plugin routes with a wrapper takes its trampoline from one pool that all plugins share; with WhateverXe, IDispHDA and IntelHybridCores
   # together the 4096 bytes run out, and the plugin that asks last keeps its functions unrouted with no error.
-  # The recipe is the Lilu target of Lilu.xcodeproj, Debug configuration, written for clang and ld: the 39 sources in the order of its
-  # Sources phase, which is also the link order, after the kmod_info file Xcode generates; C++ with -fapple-kext and C without, as the
-  # release binary shows (its C leaf functions use the red zone); symbols not hidden and no debug information, as Xcode's Debug has it
-  local S=$OBJ/lilu/src O=$OBJ/lilu/out K f o exe defs incs other base cflags cxxflags aflags cmd sources objs
+  # The recipe is the Lilu target of Lilu.xcodeproj, Release configuration, written for clang and ld: the 39 sources in the order of its
+  # Sources phase, which is also the link order, after the kmod_info file Xcode generates; C++ with -fapple-kext and C without, as
+  # acidanthera's binaries show (their C leaf functions use the red zone); -O3 with LTO, symbols hidden, -g, dead strip, then the two
+  # strips of the Archive phase
+  local S=$OBJ/lilu/src O=$OBJ/lilu/out K f o exe defs incs other maps base cflags cxxflags aflags cmd sources objs
   export_tree "$SRC/Lilu" "$S"; rm -rf "$O"; mkdir -p "$O"; K=$(mksdk)
   [ "$(shasum -a 256 "$S/Lilu.xcodeproj/project.pbxproj" | cut -c1-64)" = 8ba17837c899f8be8abac416111efa8d2c623d1bdbe3cf8a9784aae571c495e3 ] \
     || die "Lilu.xcodeproj is not the one of 1.7.2, which this stage follows: read it again before building another Lilu"
@@ -474,16 +475,22 @@ stage_lilu() {   # Lilu 1.7.2 DEBUG from the fork: acidanthera's tag and one com
     Lilu/Sources/kern_file.cpp umm_malloc/umm_malloc.c capstone/SStream.c lzvn/lzvn.c capstone/arch/X86/X86Mapping.c
     Lilu/Sources/kern_iokit.cpp Lilu/Sources/kern_crypto.cpp capstone/utils.c sha256/sha256.c)
   defs=(-DCAPSTONE_HAS_X86=1 -DCAPSTONE_HAS_OSXKERNEL=1 -DCAPSTONE_DIET=1 -DCAPSTONE_X86_REDUCE=1 -DCAPSTONE_STATIC=1 -DUMM_BEST_FIT=1
-    -DUMM_MALLOC_CFG_HEAP_SIZE=0x10000 -DMODULE_VERSION=1.7.2 -DPRODUCT_NAME=Lilu -DDEBUG=1 -DKERNEL -DKERNEL_PRIVATE -DDRIVER_PRIVATE -DAPPLE -DNeXT)
+    -DUMM_MALLOC_CFG_HEAP_SIZE=0x10000 -DMODULE_VERSION=1.7.2 -DPRODUCT_NAME=Lilu -DKERNEL -DKERNEL_PRIVATE -DDRIVER_PRIVATE -DAPPLE -DNeXT)
   # Xcode's header maps find "kern_efi.hpp", "sha256.h" and <umm_malloc.h> outside the search folders: here the first three entries do
   incs=(-iquote "$S/Lilu/Headers" -iquote "$S/sha256" -I"$S/umm_malloc" -I"$S/capstone/include" -I"$S/lzvn" -I"$S/Lilu" -I"$K/Headers")
   other=(-mmmx -msse -msse2 -msse3 -mfpmath=sse -mssse3 -ftree-vectorize -fno-non-call-exceptions -fno-builtin -fno-asynchronous-unwind-tables
     -Wall -Wextra -Wno-unused-parameter -Wno-deprecated-register -Wno-unknown-pragmas -Wno-unknown-warning-option -Wno-ossharedptr-misuse
     -Wno-vla -Werror -Wno-stdlibcxx-not-found)
-  base=(-target x86_64-apple-macos10.6 -nostdinc -fpascal-strings -fasm-blocks -fstrict-aliasing -fno-common -O0 "${defs[@]}" "${incs[@]}")
-  cflags=(-x c -std=c11 "${base[@]}" "${other[@]}")
-  cxxflags=(-x c++ -std=c++1y -fno-exceptions -fno-rtti -fapple-kext "${base[@]}" "${other[@]}")
-  aflags=(-x assembler-with-cpp -target x86_64-apple-macos10.6 -nostdinc "${defs[@]}" "${incs[@]}")
+  # The linker hashes the debug map, with the paths of sources and objects, into the UUID before strip removes it: these paths, which
+  # name no machine, and -oso_prefix below give the same file wherever $WORK is. Nothing else in the executable carries a path
+  maps=(-fdebug-compilation-dir=. -ffile-prefix-map="$S"=/Lilu -ffile-prefix-map="$K"=/MacKernelSDK -ffile-prefix-map="$O"=/obj)
+  # -fwrapv-pointer is not Xcode's: without it the clang of the Command Line Tools drops the check "invalid symbol/string tables point
+  # behind symbol table" of MachInfo::solveSymbol at -O3, which the clang of Xcode 16.4 keeps (the string is in acidanthera's RELEASE)
+  base=(-target x86_64-apple-macos10.6 -nostdinc -fpascal-strings -fasm-blocks -fstrict-aliasing -fno-common -O3 -funroll-loops -flto -g
+    -fvisibility=hidden -fwrapv-pointer "${defs[@]}" "${incs[@]}")
+  cflags=(-x c -std=c11 "${base[@]}" "${other[@]}" "${maps[@]}")
+  cxxflags=(-x c++ -std=c++1y -fno-exceptions -fno-rtti -fapple-kext "${base[@]}" "${other[@]}" "${maps[@]}")
+  aflags=(-x assembler-with-cpp -target x86_64-apple-macos10.6 -nostdinc "${defs[@]}" "${incs[@]}" -g "${maps[@]}")
   # Lilu writes the date of its build into its version: with the date of acidanthera's 1.7.2 archives it says what theirs says
   local SOURCE_DATE_EPOCH; SOURCE_DATE_EPOCH=$(epoch "${LILU_DATE:?}"); export SOURCE_DATE_EPOCH
   cat > "$O/Lilu_info.c" <<'EOC'
@@ -506,22 +513,37 @@ EOC
     case $f in *.cpp) cmd=("$CXX" "${cxxflags[@]}") ;; *.c) cmd=("$CC" "${cflags[@]}") ;; *) cmd=("$CC" "${aflags[@]}") ;; esac
     ( cd "$S" && "${cmd[@]}" -c "$S/$f" -o "$o" ) >> "$LOGS/lilu.log" 2>&1 || { grep -B2 -A6 ' error:' "$LOGS/lilu.log" | head -30; die "Lilu: $f"; }
   done
-  exe=$O/Lilu
+  exe=$O/Lilu.kext/Contents/MacOS/Lilu; mkdir -p "$O/Lilu.kext/Contents/MacOS"
+  # ZERO_AR_DATE: no times of the objects in the debug map, which the UUID hashes too
   ( cd "$S" && ZERO_AR_DATE=1 "$CXX" -target x86_64-apple-macos10.6 -nostdlib -static -Xlinker -kext -Xlinker -no_adhoc_codesign -L"$S/Lilu/Library" \
-      -L"$K/Library/universal" "${objs[@]}" -lkmodc++ -lkmod -lcc_kext -o "$exe" ) >> "$LOGS/lilu.log" 2>&1 || { tail -20 "$LOGS/lilu.log"; die "Lilu link"; }
-  strip -S "$exe"
+      -L"$K/Library/universal" -flto -dead_strip -Xlinker -object_path_lto -Xlinker "$O/lilu-lto.o" -Xlinker -oso_prefix -Xlinker "$O/" \
+      "${objs[@]}" -lkmodc++ -lkmod -lcc_kext -o "$exe" ) >> "$LOGS/lilu.log" 2>&1 || { tail -20 "$LOGS/lilu.log"; die "Lilu link"; }
+  ! nm -ap "$exe" | grep -E ' (SO|OSO) ' | grep -q -F "$WORK" || die "Lilu: the build folder is in the debug map"
+  strip -S "$exe"; strip -x -T "$exe" 2> /dev/null || strip -x "$exe"
   nm "$exe" | grep -q ' _kmod_info$' || die "Lilu has no kmod_info"
-  ! nm -u "$exe" | grep -E -q 'chkstk_darwin|_objc_|___cxa_atexit|___gxx_personality' || die "Lilu imports what a kext cannot"
-  # The bundle is the one of acidanthera's 1.7.2 DEBUG archive, which fetch downloaded for its SDK, with this executable in place of
-  # its own: its Info.plist and its Resources, as on the tested machine. The plugins are compiled against that same SDK
-  rm -rf "$OUT/Lilu.kext"; cp -R "$LILU" "$OUT/Lilu.kext"; cp "$exe" "$OUT/Lilu.kext/Contents/MacOS/Lilu"; stamp "$OUT/Lilu.kext"
+  ! nm -u "$exe" | grep -E -q 'chkstk_darwin|_chk$|_objc_|___cxa_atexit|___gxx_personality' || die "Lilu imports what a kext cannot"
+  # Info.plist as Xcode writes it: the tree's, with its build variables replaced and the platform and minimum system Xcode adds. No
+  # Resources: the SDK goes only into a DEBUG bundle, and the plugins here are compiled against the one of acidanthera's DEBUG archive
+  python3 -I - "$S/Lilu/Info.plist" "$O/Lilu.kext/Contents/Info.plist" <<'PY' || die "the Info.plist of Lilu"
+import plistlib, sys
+s = open(sys.argv[1], encoding='utf-8').read()
+for k, v in {'$(EXECUTABLE_NAME)': 'Lilu', '$(PRODUCT_BUNDLE_IDENTIFIER)': 'as.vit9696.Lilu', '$(PRODUCT_NAME:rfc1034identifier)': 'Lilu',
+             '$(PRODUCT_NAME)': 'Lilu', '$(MODULE_VERSION)': '1.7.2'}.items():
+    s = s.replace(k, v)
+assert '$(' not in s, 'a build variable is left in Info.plist'
+info = plistlib.loads(s.encode('utf-8'))
+info['CFBundleSupportedPlatforms'] = ['MacOSX']
+info['LSMinimumSystemVersion'] = '10.6'
+open(sys.argv[2], 'wb').write(plistlib.dumps(info))
+PY
+  rm -rf "$OUT/Lilu.kext"; cp -R "$O/Lilu.kext" "$OUT/Lilu.kext"; stamp "$OUT/Lilu.kext"
   say "Lilu $(sha "$OUT/Lilu.kext/Contents/MacOS/Lilu") $(strings -a "$exe" | grep -E -m1 '^(DBG|REL)-[0-9]{3}-')"
 }
 
-stage_whateverxe() {   # the DEBUG build, as the one that ran: the boot-args in the config ask for its logs
+stage_whateverxe() {   # the RELEASE build, as the one that runs: its tools/build.py with --release, -O2 and without the DEBUG logs
   local W=$OBJ/whateverxe/src O=$OBJ/whateverxe/out
   export_tree "$SRC/WhateverXe" "$W"; rm -rf "$O"; mkdir -p "$O"
-  ( cd "$W" && SOURCE_DATE_EPOCH=$(epoch "${WHATEVERXE_DATE:?}") python3 tools/build.py --sdk "$(mksdk)" --lilu "$LILU" --output "$O" ) > "$LOGS/whateverxe.log" 2>&1 || { grep -E 'error' "$LOGS/whateverxe.log" | head -20; die "WhateverXe"; }
+  ( cd "$W" && SOURCE_DATE_EPOCH=$(epoch "${WHATEVERXE_DATE:?}") python3 tools/build.py --release --sdk "$(mksdk)" --lilu "$LILU" --output "$O" ) > "$LOGS/whateverxe.log" 2>&1 || { grep -E 'error' "$LOGS/whateverxe.log" | head -20; die "WhateverXe"; }
   ( cd "$W" && python3 tools/test.py ) > "$LOGS/whateverxe-test.log" 2>&1 || { tail -5 "$LOGS/whateverxe-test.log"; die "WhateverXe tests"; }
   rm -rf "$OUT/WhateverXe.kext"; cp -R "$O/WhateverXe.kext" "$OUT/WhateverXe.kext"; stamp "$OUT/WhateverXe.kext"
   say "WhateverXe $(sha "$OUT/WhateverXe.kext/Contents/MacOS/WhateverXe"); $(tail -1 "$LOGS/whateverxe-test.log" | cut -c1-80)"
@@ -630,7 +652,8 @@ stage_idisphda() {   # the Intel display codec, for audio over USB-C: from the A
   say "IDispHDA $(sha "$OUT/IDispHDA.kext/Contents/MacOS/IDispHDA")"
 }
 
-stage_mtkwlan() {   # the original MT7920 Wi-Fi card: AirportMtkWlan, Debug as tested, with the flags of the fork's build-macos.sh and without Xcode
+stage_mtkwlan() {   # the original MT7920 Wi-Fi card: AirportMtkWlan, Release as tested (-O1, as its Xcode project and build-macos.sh have it), with
+  # the flags of the fork's build-macos.sh and without Xcode
   local F=$OBJ/mtkwlan/src O=$OBJ/mtkwlan/out NAME=AirportMtkWlan BID=com.flxxxxddd.AirportMtkWlan
   export_tree "$SRC/SimpleMtkWlan" "$F"; rm -rf "${F:?}/MacKernelSDK"; cp -R "$(mksdk)" "$F/MacKernelSDK"
   # the firmware comes from linux-firmware, downloaded with its hash by fetch: MediaTek's licence keeps it out of Git and out of this repository
@@ -655,7 +678,7 @@ stage_mtkwlan() {   # the original MT7920 Wi-Fi card: AirportMtkWlan, Debug as t
     -fno-use-cxa-atexit -fno-asynchronous-unwind-tables -DKERNEL -DIEEE80211_STA_ONLY -D__PRIVATE_SPI__
     -DAIRPORT -DAIRPORT_WCL -D__IO80211_TARGET=__MAC_26_0 -DIO80211FAMILY_V2 ${AWDL_DEFINE[@]+"${AWDL_DEFINE[@]}"}
     "-DSMTW_VERSION=\"$VERSION\"" "-DGIT_COMMIT=\"$COMMIT\"" "-DITLWM_VERSION=\"$VERSION\"" -include "$F/SimpleMtkWlan/PrivateSPI.pch"
-    -Wno-deprecated-register -Wno-everything -Werror=return-type -O0 -DDEBUG=1)
+    -Wno-deprecated-register -Wno-everything -Werror=return-type -O1)
   rm -rf "${O:?}"; mkdir -p "$O/obj" "$O/$NAME.kext/Contents/MacOS"; : > "$LOGS/mtkwlan.log"
   for f in "${SOURCES[@]}"; do
     o=$O/obj/$(echo "$f" | tr '/' '_').o; OBJECTS+=("$o")
@@ -664,7 +687,7 @@ stage_mtkwlan() {   # the original MT7920 Wi-Fi card: AirportMtkWlan, Debug as t
   if [ -f "$F/$AWDL" ]; then
     o=$O/obj/MtkAwdlInterface.o; OBJECTS+=("$o")
     "$CXX" -target x86_64-apple-macos10.12 -x c++ -std=c++17 -mkernel -fapple-kext -fno-rtti -fno-exceptions -fno-builtin -fno-common -nostdlib \
-      -fno-use-cxa-atexit -fno-asynchronous-unwind-tables -DKERNEL -O0 -DDEBUG=1 -I "$HDR" -Wno-everything -Werror=return-type \
+      -fno-use-cxa-atexit -fno-asynchronous-unwind-tables -DKERNEL -O1 -I "$HDR" -Wno-everything -Werror=return-type \
       -c "$F/$AWDL" -o "$o" >> "$LOGS/mtkwlan.log" 2>&1 || { tail -20 "$LOGS/mtkwlan.log"; die "AirportMtkWlan: $AWDL"; }
   fi
   cat > "$O/obj/kmod_info.c" <<KMOD
@@ -695,15 +718,51 @@ PYPLIST
   say "AirportMtkWlan $(sha "$OUT/AirportMtkWlan.kext/Contents/MacOS/AirportMtkWlan")"
 }
 
-stage_mtkbt() {   # the MT7920's Bluetooth patcher with USB buffers prepared read only; the Xcode Debug settings, the Info.plist of the v1.1.0 DEBUG release
-  local B=$OBJ/mtkbt NAME=SimpleMtkBtPatcher BID=com.laobamac.SimpleMtkBtPatcher VERSION=1.1.0 K FLAGS
-  export_tree "$SRC/SimpleMtkBtFw" "$B/src" SimpleMtkBtPatcher; K=$(mksdk)
-  # the date goes into Lilu's kextVersion: this one gives the binary that ran
+stage_mtkbt() {   # the MT7920's Bluetooth: the firmware loader of v1.1.0, and the patcher with USB buffers prepared read only. Both RELEASE, -Os:
+  # the Release configuration of their Xcode project sets no optimization level, and Xcode's own is -Os. The Info.plists of the v1.1.0 DEBUG
+  # release; the loader's gets a copy of its USB personality for 13D3:3606 with this laptop's card, 13D3:3622: the driver still checks
+  # chip, firmware and flavour itself. The firmware the loader uploads is in the fork's tree, as upstream ships it
+  local B=$OBJ/mtkbt ZIP=$DEPS/mtkbt/SimpleMtkBtFw-1.1.0-DEBUG.zip NAME BID VERSION=1.1.0 K FLAGS f objs=()
+  export_tree "$SRC/SimpleMtkBtFw" "$B/src" SimpleMtkBtFw SimpleMtkBtPatcher; K=$(mksdk)
+  # the date goes into Lilu's kextVersion in the patcher: this one gives the binary that runs
   local SOURCE_DATE_EPOCH; SOURCE_DATE_EPOCH=$(epoch "${MTKBT_DATE:?}"); export SOURCE_DATE_EPOCH
-  rm -rf "${B:?}/obj" "${B:?}/$NAME.kext"; mkdir -p "$B/obj" "$B/$NAME.kext/Contents/MacOS"
+  rm -rf "${B:?}/obj" "$B/SimpleMtkBtFw.kext" "$B/SimpleMtkBtPatcher.kext"; mkdir -p "$B/obj/fw" "$B/SimpleMtkBtFw.kext/Contents/MacOS" "$B/SimpleMtkBtPatcher.kext/Contents/MacOS"
+  : > "$LOGS/mtkbt.log"
   FLAGS=(-target x86_64-apple-macos10.12 -x c++ -std=gnu++14 -mkernel -fapple-kext -fno-rtti -fno-exceptions -fno-builtin -fno-common -nostdlib
-    -fno-use-cxa-atexit -fno-asynchronous-unwind-tables -O0 -DKERNEL -DDEBUG=1 -DMODULE_VERSION=$VERSION -DPRODUCT_NAME=$NAME
-    -I "$K/Headers" -I "$LILU_SDK" -I "$B/src/SimpleMtkBtPatcher" -Wno-deprecated-register -Werror=return-type)
+    -fno-use-cxa-atexit -fno-asynchronous-unwind-tables -Os -DKERNEL -I "$K/Headers" -Wno-deprecated-register -Werror=return-type)
+  # the loader: every source compiled as C++, as its Xcode target says
+  NAME=SimpleMtkBtFw; BID=com.laobamac.SimpleMtkBtFw
+  for f in BtMtk.cpp FwBinary.cpp SimpleMtkBtFw.cpp USBDeviceController.cpp zutil.c; do
+    objs+=("$B/obj/fw/${f%.*}.o")
+    "$CXX" "${FLAGS[@]}" -I "$B/src/SimpleMtkBtFw" -c "$B/src/SimpleMtkBtFw/$f" -o "${objs[${#objs[@]}-1]}" >> "$LOGS/mtkbt.log" 2>&1 \
+      || { tail -20 "$LOGS/mtkbt.log"; die "SimpleMtkBtFw: $f"; }
+  done
+  cat > "$B/obj/fw/kmod_info.c" <<KMOD
+#include <mach/kmod.h>
+extern kern_return_t _start(kmod_info_t *, void *);
+extern kern_return_t _stop(kmod_info_t *, void *);
+__attribute__((visibility("default"))) kmod_start_func_t *_realmain = 0;
+__attribute__((visibility("default"))) kmod_stop_func_t *_antimain = 0;
+__attribute__((visibility("default"))) kmod_info_t kmod_info = {
+	0, KMOD_INFO_VERSION, -1U, "$BID", "$VERSION", -1, 0, 0, 0, 0, _start, _stop,
+};
+KMOD
+  { "$CC" -target x86_64-apple-macos10.12 -mkernel -fno-builtin -fno-common -nostdlib -DKERNEL -I "$K/Headers" -c "$B/obj/fw/kmod_info.c" -o "$B/obj/fw/kmod_info.o" &&
+    "$(xcrun -f ld)" -arch x86_64 -kext -static -macos_version_min 10.12 -undefined dynamic_lookup -o "$B/$NAME.kext/Contents/MacOS/$NAME" \
+      "${objs[@]}" "$B/obj/fw/kmod_info.o" "$K/Library/x86_64/libkmod.a"; } >> "$LOGS/mtkbt.log" 2>&1 || { tail -20 "$LOGS/mtkbt.log"; die "SimpleMtkBtFw link"; }
+  python3 -I - "$ZIP" "$B/$NAME.kext/Contents/Info.plist" <<'PY' || die "the Info.plist of SimpleMtkBtFw 1.1.0"
+import plistlib, sys, zipfile
+info = plistlib.loads(zipfile.ZipFile(sys.argv[1]).read('SimpleMtkBtFw.kext/Contents/Info.plist'))
+usb = info['IOKitPersonalities']
+card = dict(usb['SimpleMtkBtFw_MT7921_13d3_3606'])
+assert card['IOProviderClass'] == 'IOUSBHostDevice', 'not a USB personality'
+card.update(idVendor=0x13d3, idProduct=0x3622)
+usb['SimpleMtkBtFw_ANV15_13d3_3622'] = card
+open(sys.argv[2], 'wb').write(plistlib.dumps(info, sort_keys=False))
+PY
+  # the patcher, a Lilu plugin
+  NAME=SimpleMtkBtPatcher; BID=com.laobamac.SimpleMtkBtPatcher
+  FLAGS+=(-DMODULE_VERSION=$VERSION -DPRODUCT_NAME=$NAME -I "$LILU_SDK" -I "$B/src/SimpleMtkBtPatcher")
   cat > "$B/obj/kmod_info.c" <<KMOD
 #include <mach/kmod.h>
 extern kern_return_t _start(kmod_info_t *, void *);
@@ -720,12 +779,14 @@ KMOD
     "$CXX" "${FLAGS[@]}" -c "$LILU_SDK/Library/plugin_start.cpp" -o "$B/obj/plugin_start.o" &&
     "$CC" -target x86_64-apple-macos10.12 -mkernel -fno-builtin -fno-common -nostdlib -DKERNEL -I "$K/Headers" -c "$B/obj/kmod_info.c" -o "$B/obj/kmod_info.o" &&
     "$(xcrun -f ld)" -arch x86_64 -kext -static -macos_version_min 10.12 -undefined dynamic_lookup -o "$B/$NAME.kext/Contents/MacOS/$NAME" \
-      "$B/obj/patcher.o" "$B/obj/plugin_start.o" "$B/obj/kmod_info.o" "$K/Library/x86_64/libkmod.a"; } > "$LOGS/mtkbt.log" 2>&1 \
+      "$B/obj/patcher.o" "$B/obj/plugin_start.o" "$B/obj/kmod_info.o" "$K/Library/x86_64/libkmod.a"; } >> "$LOGS/mtkbt.log" 2>&1 \
     || { tail -20 "$LOGS/mtkbt.log"; die "SimpleMtkBtPatcher"; }
-  unzip -p "$DEPS/mtkbt/SimpleMtkBtFw-1.1.0-DEBUG.zip" "$NAME.kext/Contents/Info.plist" > "$B/$NAME.kext/Contents/Info.plist" || die "the Info.plist of SimpleMtkBtFw 1.1.0"
-  xcrun otool -hv "$B/$NAME.kext/Contents/MacOS/$NAME" | grep -q KEXTBUNDLE || die "SimpleMtkBtPatcher is not a kext"
-  rm -rf "$OUT/$NAME.kext"; cp -R "$B/$NAME.kext" "$OUT/$NAME.kext"; stamp "$OUT/$NAME.kext"
-  say "SimpleMtkBtPatcher $(sha "$OUT/$NAME.kext/Contents/MacOS/$NAME")"
+  unzip -p "$ZIP" "$NAME.kext/Contents/Info.plist" > "$B/$NAME.kext/Contents/Info.plist" || die "the Info.plist of SimpleMtkBtPatcher 1.1.0"
+  for NAME in SimpleMtkBtFw SimpleMtkBtPatcher; do
+    xcrun otool -hv "$B/$NAME.kext/Contents/MacOS/$NAME" | grep -q KEXTBUNDLE || die "$NAME is not a kext"
+    rm -rf "${OUT:?}/$NAME.kext"; cp -R "$B/$NAME.kext" "$OUT/$NAME.kext"; stamp "$OUT/$NAME.kext"
+  done
+  say "SimpleMtkBtFw $(sha "$OUT/SimpleMtkBtFw.kext/Contents/MacOS/SimpleMtkBtFw"), SimpleMtkBtPatcher $(sha "$OUT/SimpleMtkBtPatcher.kext/Contents/MacOS/SimpleMtkBtPatcher")"
 }
 
 stage_btleadv() {   # BTLEAdvFixup of ForbiddenItlwm: Bluetooth LE advertising, so AirDrop finds this Mac, on with -mtkawdl as AWDL is. A Lilu plugin
@@ -763,15 +824,6 @@ PY
   say "BTLEAdvFixup $(sha "$EXE")"
 }
 
-stage_nmappfree() {   # Chrome's Widevine with the AMFI boot-args: a Lilu plugin injected by OpenCore. Its own build.sh, given the Lilu and MacKernelSDK above, downloads nothing
-  local W=$OBJ/nmappfree
-  export_tree "$SRC/NMAppFree" "$W"; mkdir -p "$W/build"
-  cp -R "$LILU" "$W/build/Lilu.kext"; cp -R "$(mksdk)" "$W/build/MacKernelSDK"
-  # the date goes into the kext's version: this one gives the binary that ran
-  SOURCE_DATE_EPOCH=$(epoch "${NMAPPFREE_DATE:?}") bash "$W/build.sh" > "$LOGS/nmappfree.log" 2>&1 || { tail -20 "$LOGS/nmappfree.log"; die "NMAppFree"; }
-  rm -rf "$OUT/NMAppFree.kext"; cp -R "$W/build/NMAppFree.kext" "$OUT/NMAppFree.kext"; stamp "$OUT/NMAppFree.kext"
-  say "NMAppFree $(sha "$OUT/NMAppFree.kext/Contents/MacOS/NMAppFree")"
-}
 
 stage_usbkeeper() {   # USBDiskKeeper: the USB disk OpenCore starts from stays attached when its port drops it at wake. A Lilu plugin injected by OpenCore; its own build.sh, given the Lilu and MacKernelSDK above, downloads nothing
   local W=$OBJ/usbkeeper/src O=$OBJ/usbkeeper/out
@@ -783,7 +835,7 @@ stage_usbkeeper() {   # USBDiskKeeper: the USB disk OpenCore starts from stays a
   say "USBDiskKeeper $(sha "$OUT/USBDiskKeeper.kext/Contents/MacOS/USBDiskKeeper")"
 }
 
-ALL="rm nvrm nvrmfb nvaccel nvrmagdc nmhda plugin translator nvk dlss nvenc latsof nitrosense smcnvidiagpu lilu whateverxe hybridpm hybridcores applealc idisphda mtkwlan mtkbt btleadv nmappfree usbkeeper"
+ALL="rm nvrm nvrmfb nvaccel nvrmagdc nmhda plugin translator nvk dlss nvenc latsof nitrosense smcnvidiagpu lilu whateverxe hybridpm hybridcores applealc idisphda mtkwlan mtkbt btleadv usbkeeper"
 [ $# -gt 0 ] || set -- $ALL
 for s in "$@"; do
   case " $ALL " in *" $s "*) ;; *) die "no stage $s; stages: $ALL" ;; esac

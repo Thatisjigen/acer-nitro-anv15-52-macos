@@ -7,9 +7,12 @@ The rule of this repository: **no Apple binary and no third-party package unless
 | File | License | Notes |
 | --- | --- | --- |
 | Scripts, documents, `efi/kexts/UTBMap-ANV.kext`, `efi/kexts/EHD0Off-ANV.kext`, `efi/kexts/USBPorts.kext`, the `*-ANV` SSDTs, `postinstall/overrides/` | MIT ([LICENSE](../LICENSE)) | Written for this project. `SSDT-PLUG-ANV`, `SSDT-EC-USBX-ANV` and `SSDT-AWAC-ANV` follow the samples of OpenCore |
+| `efi/kexts/NMLibVal.kext` | BSD-3-Clause | Written for this laptop, a Lilu plugin built with Lilu's SDK (BSD-3-Clause). Only the compiled kext is here; its source is in a private repository for now |
 | `efi/config.template.plist`, `efi/config.install.template.plist` | BSD-3-Clause ([text](../efi/licenses/OpenCore-BSD-3-Clause.txt)) | They derive from OpenCore's `Sample.plist` |
 | `efi/kexts/XHCI-unsupported.kext/Contents/Info.plist` | GPL-2.0 ([text](../efi/licenses/GPL-2.0.txt)) | By RehabMan, with more IDs than in his repository; only an `Info.plist` |
 | `efi/acpi/SSDT-NITRO.*` | GPL-3.0 | From ptnzzn's fork of NitroSense-macOS |
+| `efi/acpi/SSDT-DEEPIDLE.*` | BSD-3-Clause ([text](../efi/licenses/S0ixStandby-BSD-3-Clause.txt)) | From [labrouss's S0ixStandby](https://github.com/labrouss/S0ixStandby): the source as it is, compiled with `iasl` 20260930 |
+| `efi/acpi/SSDT-PWRB-QE0.*` | MIT ([LICENSE](../LICENSE)) | Written for this project |
 | `efi/acpi/SSDT-USB-Reset.*` | Not stated | Copied from the EFI of NullMoth's 1401 app: 110 bytes, one condition on `_STA`. To be redone separately if the author asks |
 | `postinstall/drop_flat_weak_binds.py`, `blendtest.m`, `nvk-requirements.txt` | MIT | Written for this project |
 
@@ -19,7 +22,7 @@ URLs and hashes are in [efi/sources.lock.json](../efi/sources.lock.json) and [po
 
 | Component | License | How this repository treats it |
 | --- | --- | --- |
-| OpenCore, Lilu, VirtualSMC, WhateverGreen, RestrictEvents, BrightnessKeys | BSD-3-Clause | Downloaded from their releases. Lilu: 1.7.3 for the `install` profile, and the 1.7.2 DEBUG release for its SDK, which the Lilu plugins are compiled against, and for the bundle that the Lilu compiled from the fork goes into |
+| OpenCore, Lilu, VirtualSMC, WhateverGreen, RestrictEvents, BrightnessKeys | BSD-3-Clause | Downloaded from their releases. Lilu: 1.7.3 for the `install` profile, and the 1.7.2 DEBUG release only for its SDK, which the Lilu plugins are compiled against, and for the bundle that the Lilu compiled from the fork goes into |
 | VoodooI2C | GPL-3.0 | Downloaded |
 | itlwm, AirportItlwm | GPL-3.0 | Downloaded |
 | BlueToolFixup (BrcmPatchRAM) | GPL-2.0 | Downloaded |
@@ -37,7 +40,7 @@ URLs and hashes are in [efi/sources.lock.json](../efi/sources.lock.json) and [po
 | glslang, SPIRV-Tools, SPIRV-Headers | BSD-3-Clause, Apache-2.0, MIT | Sources downloaded and compiled on your machine, only to build NVK |
 | Python 3.12 (python-build-standalone), meson, ninja, mako, MarkupSafe, PyYAML, packaging, cmake, pkgconf | PSF, Apache-2.0, MIT, BSD | Downloaded with their hashes into a folder of the build, only to build NVK |
 | Rust 1.97.1, bindgen, cbindgen | MIT or Apache-2.0; cbindgen MPL-2.0 | Installed by rustup and cargo into the build folder, only to build NVK |
-| SimpleMtkBtFw | GPL-3.0 | Downloaded; one USB match is added to its `Info.plist`. The patcher's `Info.plist` also comes from this release |
+| SimpleMtkBtFw release 1.1.0 | GPL-3.0 | Downloaded only for the `Info.plist` of the loader and of the patcher, which are both compiled from the fork; one USB match is added to the loader's |
 | MT7920 firmware, from linux-firmware | MediaTek's licence (`LICENCE.mediatek`) | Downloaded with its hash and built into AirportMtkWlan on your machine. It may be redistributed with MediaTek chips, but not under the GPL: **do not publish the compiled kext** |
 
 ## What is compiled from the forks
@@ -49,12 +52,11 @@ URLs and hashes are in [efi/sources.lock.json](../efi/sources.lock.json) and [po
 | HybridPM | Thou Shalt Not Profit 1.0 | XE-PM code by JulioNectar: non-profit use, same license |
 | WhateverXe, AppleALC, Lilu | BSD-3-Clause | Lilu: acidanthera's 1.7.2 and one commit |
 | SimpleMtkWlan | GPL-2.0 | Without its firmware, which is generated at build |
-| SimpleMtkBtFw (the patcher) | GPL-3.0 | |
+| SimpleMtkBtFw (the loader and the patcher) | GPL-3.0 | |
 | LatSOF-Audio, nvenc, SMCNvidiaGPU | MIT | |
 | IntelHybridCores | MIT | By rodgod-rr (Rodrigo Lacerda Rangel Santos): his `main`, unchanged |
 | ForbiddenItlwm | GPL-3.0 for BTLEAdvFixup, the only part compiled | |
 | NitroSense-macOS | GPL-3.0 | |
-| NMAppFree | BSD-3-Clause | Not a fork: written for this laptop, in its own repository |
 | USBKeeper (USBDiskKeeper) | None stated yet | Not a fork: written for this laptop, in its own repository, which has no license file yet. Compiled on your machine, not redistributed |
 
 **macOS** belongs to Apple, and its license says it runs on Apple hardware. This repository does not contain macOS: the recovery is downloaded from Apple. Decide what you are allowed to do.

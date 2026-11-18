@@ -28,7 +28,7 @@ SCRIPT = ROOT / 'postinstall/postinstall.py'
 REAL = json.loads((ROOT / 'postinstall/manifest.json').read_text())
 KEXTS = ['NVRM', 'NVRMFB', 'NVAccel', 'NVRMAGDC']
 FOR_EFI = ['Lilu', 'NMHDA', 'NitroEC', 'SMCNvidiaGPU', 'WhateverXe', 'HybridPM', 'IntelHybridCores', 'AppleALC', 'IDispHDA', 'AirportMtkWlan', 'SimpleMtkBtPatcher', 'BTLEAdvFixup',
-           'NMAppFree', 'USBDiskKeeper']
+           'SimpleMtkBtFw', 'USBDiskKeeper']
 
 
 def sha(path):

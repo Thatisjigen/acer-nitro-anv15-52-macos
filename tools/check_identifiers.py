@@ -29,7 +29,7 @@ ALLOWED_ADDRESS = {'55486333+Thatisjigen@users.noreply.github.com', 'noreply@ant
 # The authors and reviewers named in the four Mesa commits of postinstall/nvk-mesa, as Mesa published them
 UPSTREAM_ADDRESSES = {'mhenning@darkrefraction.com', 'axel@0m.dev', 'kherbst@redhat.com', 'airlied@redhat.com', 'mary@mary.zone',
                       'phomes@gmail.com'}
-BINARIES_ALLOWED = re.compile(r'^efi/acpi/SSDT-[A-Za-z-]+\.aml$')
+BINARIES_ALLOWED = re.compile(r'^(efi/acpi/SSDT-[A-Za-z0-9-]+\.aml|efi/kexts/NMLibVal\.kext/Contents/MacOS/NMLibVal)$')
 # GUIDs of OpenCore and Apple, OpenCore's sample identity, and the WMI interfaces of the Acer firmware named in SSDT-NITRO
 UUIDS_ALLOWED = {'7c436110-ab2a-4bbb-a880-fe41995c9f82', '4d1fda02-38c7-4a6a-9cc6-4bcca8b30102', '8be4df61-93ca-11d2-aa0d-00e098032b8c',
                  '00000000-0000-0000-0000-000000000000', '94b73556-2197-4702-82a8-3e1337dafbfb',

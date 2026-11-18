@@ -39,12 +39,6 @@
    "license": "BSD-3-Clause",
    "note": "Dortania build of acidanthera/Lilu"
   },
-  "AMFIPass-Mod": {
-   "url": "https://raw.githubusercontent.com/b00t0x/WhateverXe-Graphics/v0.4.0/extras/AMFIPass-v1.4.1-Mod-RELEASE.zip",
-   "sha256": "71f41de42e355d2a83e6f093ef34a5b24d0a9c9a9085830b2317f1b874f56250",
-   "license": "see the upstream repository",
-   "note": "b00t0x: needed by the Mod signature of the Graphics payload"
-  },
   "AMFIPass": {
    "url": "https://raw.githubusercontent.com/dortania/OpenCore-Legacy-Patcher/76516394fddb7ce4526ccbcc5b806795c30e9a89/payloads/Kexts/Acidanthera/AMFIPass-v1.4.1-RELEASE.zip",
    "sha256": "07b266145906db41f4b13a7938fbb173ea28888cc1fa65f84417f8820adc961e",
@@ -140,12 +134,6 @@
    "sha256": "c26140b2091e7b41aab5e5fbdd322112908efc509f9fde3d71d4e3f91396b991",
    "license": "see the upstream repository",
    "note": "lshbluesky/IntelBluetoothFirmware"
-  },
-  "SimpleMtkBtFw-1.1.0": {
-   "url": "https://github.com/flxxxxddd/SimpleMtkBtFw/releases/download/v1.1.0/SimpleMtkBtFw-1.1.0-DEBUG.zip",
-   "sha256": "77033ec72f182c14bb4be51809a7d1f017f92a6b6f36bab44f094faca1df656d",
-   "license": "see the project",
-   "note": "flxxxxddd/SimpleMtkBtFw v1.1.0 DEBUG: Bluetooth firmware loader and patcher for MediaTek cards"
   }
  },
  "efi_files": {
@@ -187,7 +175,13 @@
   "full": {
    "Lilu": {
     "compiled": true,
-    "tested_binary_sha16": "ce79584f3d748e72"
+    "tested_binary_sha16": "47aadc9fe2ccea2f"
+   },
+   "NMLibVal": {
+    "local": "efi/kexts/NMLibVal.kext",
+    "plist_sha256": "7e533172b36ca97e01c49f46ed1e3c7168aa4d756e7f782a2e084e07e940caaf",
+    "binary_sha256": "8c8bcabc1eb3203bdddf9371a4508743c030056e9fa34834a463a80e7e4bdb76",
+    "same_as_tested": true
    },
    "AppleALC": {
     "compiled": true,
@@ -203,13 +197,6 @@
    "NMHDA": {
     "compiled": true,
     "tested_binary_sha16": "9daea091cdc5ba8f"
-   },
-   "AMFIPass": {
-    "asset": "AMFIPass-Mod",
-    "root": "AMFIPass.kext",
-    "plist_sha256": "eb3fda04c0e8c8ce0ef4cfc984dcfb771db6aee476d379bd4bc3b7a74a00e4e9",
-    "binary_sha256": "2d36aeca1740b258e6bb0b66844b5bfb59a0edb7cdd9ef78206689e5d223d8dc",
-    "same_as_tested": true
    },
    "BrightnessKeys": {
     "asset": "BrightnessKeys-1.0.4",
@@ -342,7 +329,7 @@
    },
    "WhateverXe": {
     "compiled": true,
-    "tested_binary_sha16": "c1bafae5a44bd051"
+    "tested_binary_sha16": "b5821bc310902295"
    },
    "XHCI-unsupported": {
     "local": "efi/kexts/XHCI-unsupported.kext",
@@ -399,21 +386,13 @@
     "tested_binary_sha16": "e0f5555bddfd101f"
    },
    "SimpleMtkBtFw": {
-    "asset": "SimpleMtkBtFw-1.1.0",
-    "root": "SimpleMtkBtFw.kext",
-    "binary_sha256": "a88457adecef37f978b9377878ce01dce78e963b2ca65330252fbfca13eeb64e",
-    "plist_sha256": "82bf68001e544347a53d3d44702a663ef0ae4fb5e880f9fd07f44458610f43b6",
-    "usb_match": {
-     "from": "SimpleMtkBtFw_MT7921_13d3_3606",
-     "name": "SimpleMtkBtFw_ANV15_13d3_3622",
-     "idVendor": 5075,
-     "idProduct": 13858
-    },
-    "same_as_tested": true
+    "compiled": true,
+    "tested_binary_sha16": "bc3cc123d8bfd072",
+    "plist_sha256": "82bf68001e544347a53d3d44702a663ef0ae4fb5e880f9fd07f44458610f43b6"
    },
    "SimpleMtkBtPatcher": {
     "compiled": true,
-    "tested_binary_sha16": "1917bcab0b1e8f75"
+    "tested_binary_sha16": "e75340e2f0097cdb"
    },
    "BTLEAdvFixup": {
     "compiled": true,
@@ -421,15 +400,11 @@
    },
    "AirportMtkWlan": {
     "compiled": true,
-    "tested_binary_sha16": "6d68a32b870467cb"
+    "tested_binary_sha16": "b5b6e810ff6d555a"
    },
    "IDispHDA": {
     "compiled": true,
     "tested_binary_sha16": "d6e59bfcffcd7f9d"
-   },
-   "NMAppFree": {
-    "compiled": true,
-    "tested_binary_sha16": "de0fd2495c5f1cac"
    },
    "USBDiskKeeper": {
     "compiled": true,

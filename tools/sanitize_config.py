@@ -36,10 +36,10 @@ MISSING_DEFAULTS = {
 
 # OpenCore does not read comments: these say what each kext is here.
 KEXT_COMMENTS = {
-    'Lilu.kext': 'Lilu 1.7.2 DEBUG, fork branch acer/current: 16 KiB for the trampolines of its plugins instead of 4, which the kexts here fill',
+    'Lilu.kext': 'Lilu 1.7.2, fork branch acer/current: 16 KiB for the trampolines of its plugins instead of 4, which the kexts here fill',
+    'NMLibVal.kext': 'NMLibVal: with AMFI on, the processes that load the GPU drivers in /Library/GPUBundles accept them, chosen by path; needs Lilu',
     'AppleALC.kext': 'AppleALC 1.9.8 with ALC245 layouts 66 and 67, fork branch acer/current',
     'NMHDA.kext': 'NMHDA of NullMoth, fork branch acer/current: HDMI audio of the RTX, 10DE:22EC; nmhdavol=1 gives the audio of the displays volume and mute',
-    'AMFIPass.kext': 'AMFIPass 1.4.1 Mod, from WhateverXe-Graphics extras/: off, it has nothing to do with the AMFI boot-args',
     'CpuTopologyRebuild.kext': 'CpuTopologyRebuild 2.0.2: off, IntelHybridCores takes its place and the two do not go together',
     'IntelHybridCores.kext': 'IntelHybridCores 0.1.0 of rodgod-rr, in place of CpuTopologyRebuild: background work on the E-cores (hcmode=4), hw.perflevel; needs Lilu',
     'SMCLightSensor.kext': 'VirtualSMC 1.3.9: off, it finds no light sensor on this laptop',
@@ -48,7 +48,7 @@ KEXT_COMMENTS = {
     'VoodooPS2Controller.kext/Contents/PlugIns/VoodooPS2Mouse.kext': 'VoodooPS2 2.3.8: off, the trackpad is on I2C',
     'VoodooPS2Controller.kext/Contents/PlugIns/VoodooPS2Trackpad.kext': 'VoodooPS2 2.3.8: off, the trackpad is on I2C',
     'SMCNvidiaGPU.kext': 'RTX sensors for VirtualSMC, fork branch acer/current; built together with NVRM',
-    'WhateverXe.kext': 'WhateverXe 0.8.2 DEBUG, fork branch acer/current; in place of WhateverGreen',
+    'WhateverXe.kext': 'WhateverXe 0.8.3, fork branch acer/current; in place of WhateverGreen',
     'HybridPM.kext': 'XE-PM (JulioNectar, TSNPL 1.0) as a Lilu plugin; on by default, -nohpm in boot-args turns it off; autonomous HWP on by default, hpmauto=0 turns it off; EPP 64, hpmepp=N for another',
     'NitroEC.kext': 'NitroEC, fork branch acer/current: EC window 0xFE708500; puts the fans back to Auto when nitrod stops answering',
     'AirportItlwm.kext': 'AirportItlwm 2.4.0-alpha laobamac: only for an Intel card, in place of the MT7920',
@@ -57,13 +57,14 @@ KEXT_COMMENTS = {
     'BlueToolFixup.kext': 'BrcmPatchRAM 2.7.2: for the Bluetooth of either card',
     'AirportMtkWlan.kext': 'AirportMtkWlan of SimpleMtkWlan, fork branch acer/current: the original MT7920 Wi-Fi card, Wi-Fi 6 unless -mtknohe, AWDL for AirDrop with -mtkawdl, firmware generated at build',
     'BTLEAdvFixup.kext': 'BTLEAdvFixup of ForbiddenItlwm, fork branch acer/current: Bluetooth LE advertising for AirDrop on the MT7920, on with -mtkawdl; needs Lilu',
-    'SimpleMtkBtFw.kext': 'SimpleMtkBtFw 1.1.0 DEBUG with the USB match 13D3:3622 of this laptop: Bluetooth of the MT7920',
+    'SimpleMtkBtFw.kext': 'SimpleMtkBtFw 1.1.0 with the USB match 13D3:3622 of this laptop: Bluetooth of the MT7920',
     'SimpleMtkBtPatcher.kext': 'SimpleMtkBtPatcher, fork branch acer/current: Bluetooth of the MT7920, USB buffers read only',
     'IDispHDA.kext': 'IDispHDA, AppleALC fork branch acer/current: audio of the Iris Xe over USB-C',
-    'NMAppFree.kext': 'NMAppFree: user apps out of the strict Mach IPC policy of the AMFI boot-args, so Widevine works in Chrome; needs Lilu',
     'USBDiskKeeper.kext': 'USBDiskKeeper, USBKeeper main: the USB disk OpenCore starts from stays attached when its port drops it at wake; needs Lilu',
 }
-ACPI_COMMENTS = {'SSDT-NITRO.aml': 'NTRO device for NitroEC: EC RAM window 0xFE708500, firmware controls, Darwin only'}
+ACPI_COMMENTS = {'SSDT-NITRO.aml': 'NTRO device for NitroEC: EC RAM window 0xFE708500, firmware controls, Darwin only',
+                 'SSDT-DEEPIDLE.aml': 'Deep Idle for macOS: \\_SB.LPS0 and \\_GPE.LXEN under Darwin, so macOS sleeps in S0. From labrouss\'s S0ixStandby',
+                 'SSDT-PWRB-QE0.aml': 'Power button for macOS: the EC query _QE0 notifies PWRB under Darwin, and PWRB wakes on the EC\'s GPE 0x6E'}
 COMMENTS = {
     'preserve firmware MMIO 0xFF000000 containing panic CR2 0xFF09804C; hardware test pending': 'Keep the firmware MMIO at 0xFF000000: without it, a page fault at boot',
     'remove one duplicate 101-byte Acer AEVD SSDT; preserve the other original': 'Remove one of the two 101-byte Acer AEVD SSDTs; the other stays',
@@ -71,24 +72,30 @@ COMMENTS = {
     'NVRAM emulata in memoria (Configuration.pdf 11.11)': 'NVRAM emulated in memory: nothing reaches the firmware flash. Loaded early, before OpenRuntime (Configuration.pdf 11.11)',
 }
 REFERENCE = re.compile(r'\b[A-Z]+-\d{3}\b(?: fallback)?')
-# Left out: -nmappfreedbg, a log line for each app NMAppFree exempts; -liludbg and liludump=90, Lilu's debugging log.
-# HDR modes, turbo and Wi-Fi 6 are on in the kexts themselves
-BOOT_ARGS_LEFT_OUT = ['-nmappfreedbg', '-liludbg', 'liludump=90']
+# Left out: -liludbg and liludump=90, Lilu's debugging log. HDR modes, turbo and Wi-Fi 6 are on in the kexts themselves.
+# keepsyms=1 stays: SimpleHDA links AppleHDA against the kernel's symbols, and without it there is no sound
+BOOT_ARGS_LEFT_OUT = ['-liludbg', 'liludump=90']
 BOOT_ARGS_ADDED = []
-# An experiment still listed, disabled, in the config this comes from
-KEXTS_LEFT_OUT = []
-# Sleep in S0 (Deep Idle) with the power button as its wake source, which the config this comes from carries as a test: two tables, and
-# the rename of the Acer DSDT's EC0._QE0 that one of them needs, found by its bytes. No such sleep has been tried, and SSDT-DEEPIDLE
-# comes from another project whose licence was not read: none of it is published
-ACPI_LEFT_OUT = ['SSDT-DEEPIDLE.aml', 'SSDT-PWRB-QE0.aml']
-ACPI_PATCHES_LEFT_OUT = [bytes.fromhex('14265f514530')]
+# Still listed, disabled, in the config this comes from: with AMFI on, NMLibVal takes their place
+KEXTS_LEFT_OUT = ['NMAppFree.kext', 'AMFIPass.kext']
+# Sleep in S0 (Deep Idle), with the power button as its wake source, is published: SSDT-DEEPIDLE (labrouss's S0ixStandby,
+# BSD-3-Clause), SSDT-PWRB-QE0 and the rename of the Acer DSDT's EC0._QE0 that it needs
+ACPI_LEFT_OUT = []
+ACPI_PATCHES_LEFT_OUT = []
+# Published off, and not in the config this comes from: the RTX's power and reset pads for macOS. On its own it switches
+# nothing; with nvrtd3=2 in the boot-args the NVIDIA driver uses it to power the RTX off when idle
+ACPI_ADDED = [{'Comment': 'RTX power and reset pads for macOS: needed by nvrtd3=2, changes nothing on its own', 'Enabled': False,
+               'Path': 'SSDT-PEGP-PINS-ANV.aml'}]
 
 
 def leave_out(cfg):
-    """What is in the source config and is not published: make drops it, compare does not count it."""
+    """What is in the source config and is not published, and what is published off without being there: make applies it,
+    compare does not count it."""
     cfg['Kernel']['Add'] = [k for k in cfg['Kernel']['Add'] if k['BundlePath'] not in KEXTS_LEFT_OUT]
     cfg['ACPI']['Add'] = [t for t in cfg['ACPI']['Add'] if t['Path'] not in ACPI_LEFT_OUT]
     cfg['ACPI']['Patch'] = [p for p in cfg['ACPI']['Patch'] if bytes(p['Find']) not in ACPI_PATCHES_LEFT_OUT]
+    paths = [t['Path'] for t in cfg['ACPI']['Add']]
+    cfg['ACPI']['Add'] += [dict(t) for t in ACPI_ADDED if t['Path'] not in paths]
 
 
 def clean_comments(node):

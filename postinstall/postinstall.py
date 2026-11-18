@@ -72,7 +72,7 @@ ARTIFACTS = ['NVRM.kext/Contents/MacOS/NVRM', 'NVRMFB.kext/Contents/MacOS/NVRMFB
              'NMHDA.kext/Contents/MacOS/NMHDA', 'NitroEC.kext/Contents/MacOS/NitroEC', 'SMCNvidiaGPU.kext/Contents/MacOS/SMCNvidiaGPU',
              'WhateverXe.kext/Contents/MacOS/WhateverXe', 'HybridPM.kext/Contents/MacOS/HybridPM', 'AppleALC.kext/Contents/MacOS/AppleALC',
              'IDispHDA.kext/Contents/MacOS/IDispHDA', 'AirportMtkWlan.kext/Contents/MacOS/AirportMtkWlan',
-             'SimpleMtkBtPatcher.kext/Contents/MacOS/SimpleMtkBtPatcher', 'BTLEAdvFixup.kext/Contents/MacOS/BTLEAdvFixup', 'NMAppFree.kext/Contents/MacOS/NMAppFree',
+             'SimpleMtkBtPatcher.kext/Contents/MacOS/SimpleMtkBtPatcher', 'SimpleMtkBtFw.kext/Contents/MacOS/SimpleMtkBtFw', 'BTLEAdvFixup.kext/Contents/MacOS/BTLEAdvFixup',
              'USBDiskKeeper.kext/Contents/MacOS/USBDiskKeeper', 'Lilu.kext/Contents/MacOS/Lilu',
              'IntelHybridCores.kext/Contents/MacOS/IntelHybridCores',
              # not a driver: what install runs to download and prepare DLSS
@@ -88,15 +88,14 @@ ARTIFACT_FORKS = {
     'NitroEC.kext/Contents/MacOS/NitroEC': ['NitroSense-macOS'], 'SMCNvidiaGPU.kext/Contents/MacOS/SMCNvidiaGPU': ['SMCNvidiaGPU', 'nvidia-macos-driver'],
     'WhateverXe.kext/Contents/MacOS/WhateverXe': ['WhateverXe'], 'HybridPM.kext/Contents/MacOS/HybridPM': ['HybridPM'], 'AppleALC.kext/Contents/MacOS/AppleALC': ['AppleALC'],
     'IDispHDA.kext/Contents/MacOS/IDispHDA': ['AppleALC'], 'AirportMtkWlan.kext/Contents/MacOS/AirportMtkWlan': ['SimpleMtkWlan'],
-    'SimpleMtkBtPatcher.kext/Contents/MacOS/SimpleMtkBtPatcher': ['SimpleMtkBtFw'], 'BTLEAdvFixup.kext/Contents/MacOS/BTLEAdvFixup': ['ForbiddenItlwm'],
-    'NMAppFree.kext/Contents/MacOS/NMAppFree': ['NMAppFree'],
+    'SimpleMtkBtPatcher.kext/Contents/MacOS/SimpleMtkBtPatcher': ['SimpleMtkBtFw'], 'SimpleMtkBtFw.kext/Contents/MacOS/SimpleMtkBtFw': ['SimpleMtkBtFw'], 'BTLEAdvFixup.kext/Contents/MacOS/BTLEAdvFixup': ['ForbiddenItlwm'],
     'USBDiskKeeper.kext/Contents/MacOS/USBDiskKeeper': ['USBKeeper'],
     'Lilu.kext/Contents/MacOS/Lilu': ['Lilu'], 'IntelHybridCores.kext/Contents/MacOS/IntelHybridCores': ['IntelHybridCores'],
     'dlss-pkg/dlss_fetch.sh': ['nvidia-macos-driver'], 'dlss-pkg/dlss/dlss_cache': ['nvidia-macos-driver'], 'dlss-pkg/dlss/nm_unzstd': ['nvidia-macos-driver'],
     'dlss-pkg/dlss/assertfail_trap.ptx': ['nvidia-macos-driver'],
 }
 COMPILED_FOR_EFI = ['Lilu', 'NMHDA', 'NitroEC', 'SMCNvidiaGPU', 'WhateverXe', 'HybridPM', 'IntelHybridCores', 'AppleALC', 'IDispHDA', 'AirportMtkWlan', 'SimpleMtkBtPatcher',
-                    'BTLEAdvFixup', 'NMAppFree', 'USBDiskKeeper']
+                    'SimpleMtkBtFw', 'BTLEAdvFixup', 'USBDiskKeeper']
 EFI_ARTIFACTS = [f'{k}.kext/Contents/MacOS/{k}' for k in COMPILED_FOR_EFI]
 
 
@@ -801,9 +800,13 @@ def machine_problems(ctx):
     if 'status: enabled.' in csr or 'Filesystem Protections: enabled' in csr or 'Kext Signing: enabled' in csr:
         blocking.append('SIP is on: this system was not started from the OpenCore of this repository (csr-active-config 430A0000)')
     bootargs = subprocess.run(['/usr/sbin/sysctl', '-n', 'kern.bootargs'], capture_output=True, text=True).stdout
-    for needed in ('amfi_get_out_of_my_way=0x1', 'amfi=0x80', 'ipc_control_port_options=0'):
-        if needed not in bootargs:
-            blocking.append(f'boot-args without {needed}: this system was not started from the OpenCore of this repository')
+    if 'ipc_control_port_options=0' not in bootargs:
+        blocking.append('boot-args without ipc_control_port_options=0: this system was not started from the OpenCore of this repository')
+    # AMFI stays on: NMLibVal lets the processes that load the GPU drivers accept them, and only those, by their path
+    loaded = subprocess.run(['/usr/bin/kmutil', 'showloaded', '--list-only'], capture_output=True, text=True).stdout
+    if ' org.anv1552.NMLibVal ' not in loaded:
+        blocking.append('NMLibVal is not loaded: with AMFI on, WindowServer would refuse the Metal drivers installed here, and this system '
+                        'was not started from the OpenCore of this repository')
     if subprocess.run(['/usr/bin/xcrun', '--show-sdk-path'], capture_output=True).returncode:
         notes.append('no Command Line Tools: xcode-select --install, then again')
     return blocking, notes
@@ -967,7 +970,7 @@ def cmd_build(ctx):
     # These go into the binaries. For a commit that was tested they stay what they were, to give the same file; for a newer one they follow it
     if heads.get('nvenc') != forks['nvenc']['tested_commit']:
         env['NVENC_VERSION'] = 'v0.9.5-g' + heads['nvenc'][:7]
-    for fork, key in (('WhateverXe', 'WHATEVERXE_DATE'), ('nvidia-macos-driver', 'NMHDA_DATE'), ('AppleALC', 'IDISPHDA_DATE'), ('SimpleMtkBtFw', 'MTKBT_DATE'), ('NMAppFree', 'NMAPPFREE_DATE'),
+    for fork, key in (('WhateverXe', 'WHATEVERXE_DATE'), ('nvidia-macos-driver', 'NMHDA_DATE'), ('AppleALC', 'IDISPHDA_DATE'), ('SimpleMtkBtFw', 'MTKBT_DATE'),
                       ('Lilu', 'LILU_DATE'), ('IntelHybridCores', 'INTELHYBRIDCORES_DATE'), ('ForbiddenItlwm', 'BTLEADV_DATE')):
         if heads.get(fork) != forks[fork]['tested_commit']:
             env[key] = git(ctx.src / fork, 'show', '-s', '--format=%cs', 'HEAD')

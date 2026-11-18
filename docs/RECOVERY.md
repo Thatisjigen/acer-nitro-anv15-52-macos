@@ -31,7 +31,7 @@ The copies are in `/Library/ANV15-52/backup-<date>`. The rollback does not delet
 | `-nmhdaoff` | No HDMI audio. **Tried,** to get around a hang at wake | NMHDA |
 | `-latsofoff` | LatSOF-Audio does not start | LatSOF-Audio |
 | `nvsensoff=1` | SMCNvidiaGPU does not read the sensors | SMCNvidiaGPU |
-| `-nmappfreeoff` | NMAppFree exempts no app: every app goes back under the strict Mach IPC rules, and Chrome loses protected video | NMAppFree |
+| `amfi=0x80 amfi_get_out_of_my_way=0x1` | AMFI off, as this EFI had it before: the GPU drivers load without NMLibVal. For when a macOS update leaves the desktop without acceleration. Chrome then has no protected video | macOS |
 | `-hcoff` | IntelHybridCores installs none of its hooks in the scheduler and in `hw.perflevel`. Not tried: here only its mode was set to 0 on a running system, with `sysctl debug.hc_mode=0` | IntelHybridCores |
 
 Note the last visible line, or take a photo: with `-v` in the boot-args you see where it stops.

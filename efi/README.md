@@ -5,11 +5,11 @@ Two profiles, built by `efi/build_efi.py` in `build/EFI/EFI/`:
 | Profile | Folder | What for | Compile? |
 | --- | --- | --- | --- |
 | `install` | `OC-INSTALL` | Install macOS, recovery. The config that installed macOS on the test machine | No, downloads only |
-| `full` | `OC` | The system with the drivers | Yes: fourteen kexts, from the forks, NMAppFree and USBKeeper |
+| `full` | `OC` | The system with the drivers | Yes: thirteen kexts, from the forks and USBKeeper |
 
 Neither has `EFI/BOOT/BOOTx64.efi`, and `LauncherOption` is `Disabled`: rEFInd stays the main boot manager and OpenCore is one of its entries ([refind-opencore.conf](refind-opencore.conf)). Linux and Windows start from their own rEFInd entries, without going through OpenCore.
 
-**There are no third-party or Apple binaries here:** the builder downloads them from fixed URLs and checks the hash of each archive, each executable and each `Info.plist` ([sources.lock.json](sources.lock.json)). A difference stops everything.
+**There are no third-party or Apple binaries here:** the one compiled kext in this folder is NMLibVal, written for this laptop and checked by its hash like the rest. The builder downloads the others from fixed URLs and checks the hash of each archive, each executable and each `Info.plist` ([sources.lock.json](sources.lock.json)). A difference stops everything.
 
 ## Identity: your values
 
@@ -34,6 +34,9 @@ Want your own values? Write `private/identity.json` with the keys `SystemSerialN
 | USB | `acpi/SSDT-USB-Reset`, `kexts/UTBMap-ANV.kext` | A map with the 9 real ports and their type |
 | Brightness | `acpi/SSDT-PNLF-ANV` | PNLF with UID 19 for WhateverXe |
 | NitroSense EC | `acpi/SSDT-NITRO` | EC window `0xFE708500`, only with Darwin |
+| Sleep | `acpi/SSDT-DEEPIDLE` | Offers macOS Deep Idle, `\_SB.LPS0` and `\_GPE.LXEN`, only with Darwin: macOS sleeps in S0. In S3 this board wakes by itself through its USB controller after a few seconds. From [labrouss's S0ixStandby](https://github.com/labrouss/S0ixStandby), as it is |
+| Power button | `acpi/SSDT-PWRB-QE0` and an ACPI patch | The EC reports a press as query `_QE0`, which the firmware hands only to Windows' HID driver; under Darwin the table notifies `PWRB` and gives it the EC's wake GPE `0x6E`. The patch renames `_QE0` to `XQE0` in the Acer DSDT of 232164 bytes only |
+| RTX power | `acpi/SSDT-PEGP-PINS-ANV` | Off in the config. The firmware fills the RTX's reset and power pads with statements macOS skips; this table repeats them, only with Darwin. `nvrtd3=2` needs it, and on its own it switches nothing ([README](../README.md#rtx-power-off)) |
 | Duplicate table | `ACPI/Delete` in the config | Removes one of the two 101-byte `ACRPRDCT` SSDTs: otherwise `AE_ALREADY_EXISTS` on AEVD |
 | Memory | `Booter/MmioWhitelist` | Keeps the MMIO at `0xFF000000`: without it, a page fault at boot |
 | Trackpad | `Kernel/Patch` | VoodooI2C waits for VoodooGPIO without a limit instead of 1 s. Valid only for this binary of VoodooI2C |
@@ -56,8 +59,8 @@ The EDID in `DeviceProperties` (`AAPL00,override-no-connect`) is the one of the 
 
 | Group | Kexts |
 | --- | --- |
-| Base | Lilu (1.7.2 DEBUG, compiled from the fork: see below), RestrictEvents, IntelHybridCores (the scheduler and `hw.perflevel` know P-cores from E-cores; `hcmode=4`), HybridPM (on unless `-nohpm`; the cores choose their own clock unless `hpmauto=0`; EPP 64, `hpmepp=N` for another), NVMeFix, NMAppFree (Chrome's Widevine with the AMFI boot-args) |
-| Graphics | WhateverXe (DEBUG build, in place of WhateverGreen), BrightnessKeys |
+| Base | Lilu (1.7.2, compiled from the fork: see below), RestrictEvents, IntelHybridCores (the scheduler and `hw.perflevel` know P-cores from E-cores; `hcmode=4`), HybridPM (on unless `-nohpm`; the cores choose their own clock unless `hpmauto=0`; EPP 64, `hpmepp=N` for another), NVMeFix, NMLibVal (with AMFI on, the GPU drivers in `/Library/GPUBundles` load: see the [README](../README.md#amfi)) |
+| Graphics | WhateverXe (in place of WhateverGreen), BrightnessKeys |
 | Audio | AppleALC, SimpleHDA, NMHDA (HDMI audio of the RTX; volume and mute of the displays with `nmhdavol=1`), IDispHDA (the Iris Xe over USB-C) |
 | SMC | VirtualSMC, SMCBatteryManager, SMCNvidiaGPU |
 | Input | VoodooI2C with its plugins, VoodooI2CHID, VoodooPS2Controller with its keyboard plugin |
@@ -71,14 +74,14 @@ The EDID in `DeviceProperties` (`AAPL00,override-no-connect`) is the one of the 
 
 Present and disabled: CpuTopologyRebuild, UTBDefault, EHD0Off-ANV, USBPorts, WhateverGreen, itlwm, and AirportItlwm, IntelBluetoothFirmware and IntelBTPatcher. **With an Intel card** in place of the MT7920, enable those three and disable AirportMtkWlan, SimpleMtkBtFw and SimpleMtkBtPatcher: that was tested with an AC 8265. Disable BTLEAdvFixup too and take `-mtkawdl` out of the boot-args: they are for the MediaTek card, and were not tried with the Intel one.
 
-Also present and disabled, because at boot they find nothing on this laptop: SMCLightSensor (no light sensor), SMCProcessor (no processor it supports), SMCSuperIO (no SuperIO chip), VoodooPS2Mouse and VoodooPS2Trackpad (the trackpad is on I2C), and AMFIPass, which has nothing to do once the AMFI boot-args below are set.
+Also present and disabled, because at boot they find nothing on this laptop: SMCLightSensor (no light sensor), SMCProcessor (no processor it supports), SMCSuperIO (no SuperIO chip), VoodooPS2Mouse and VoodooPS2Trackpad (the trackpad is on I2C).
 
 ## Boot-args of the `full` profile
 
 | Boot-arg | Whose | What for |
 | --- | --- | --- |
-| `keepsyms=1` | macOS | Symbols in panics |
-| `amfi_get_out_of_my_way=0x1 amfi=0x80 ipc_control_port_options=0` | NullMoth, Graphics | WindowServer can load Metal drivers not signed by Apple. Without them the kernel rejects both plugins and the desktop does not arrive. They also put every app under the kernel's strictest Mach IPC rules: NMAppFree takes the user apps back out, see the [README](../README.md#chrome-and-nmappfree) |
+| `keepsyms=1` | macOS, SimpleHDA | Symbols in panics. SimpleHDA links Apple's audio driver against them: **without it there is no sound** |
+| `ipc_control_port_options=0` | NullMoth | Turns off the kernel's pinned and immovable task control ports, as NullMoth asks. AMFI stays on: there is no `amfi` boot-arg, NMLibVal lets the GPU drivers load |
 | `-allow3d -disablegfxfirmware` | WhateverXe | Intel acceleration |
 | `-wex-nv-video` | WhateverXe | Safari's GPU process may map the NVIDIA runtime's decoders, so Safari decodes H.264, HEVC and VP9 on the RTX. The other processes need no boot-arg for that |
 | `-wex-va-renderer` | WhateverXe | The Intel video driver's image conversion, corrected for this GPU: hardware video processing on the Iris Xe. Experimental |
@@ -94,6 +97,8 @@ Also present and disabled, because at boot they find nothing on this laptop: SMC
 | `nvfbvrr=1` | NVRMFB | Variable refresh, when the monitor offers it. Not testable here: the monitor gives no VRR range over HDMI |
 
 On in the kexts themselves, each with a boot-arg that turns it off: the framebuffer, accelerator and four heads of the RTX, its 30-bit desktop (`nvfb30=0`) and HDR10 in RGB (`nvfbhdr422=1` keeps the YCbCr 4:2:2 fallback, `nvfbhdrbt2020=1` declares BT.2020 again); in WhateverXe the recovery from GPU hangs (`-wex-no-reset-recover`, and for the parts taken from other forks `-wex-no-ccs-restore`, `-wex-no-reset-notify`, `-wex-no-reset-skip`), Intel's workaround Wa_18022495364 (`-wex-no-adln-ctx-invalidate`), the guard on the display interrupts around a display sleep (`-wex-no-display-sleep-irq`), Metal compute on the render engine (`-wex-parallel-compute` gives the second engine back), the render engine's workarounds (`-wex-no-engine-wa`, `-wex-no-aux-inv`), Intel's plug-in for Metal Performance Shaders switched off (`-wex-intel-mps-plugin` leaves it on), the 64 KB class of thread-group memory (`-wex-no-slm-64k`), the GT forcewake balanced after a hang report (`-wex-tgl-no-hangwake`), the idle status buffer kept across a wake from S0 (`-wex-no-s0-csb-resync`) and the panic when the GPU stays hung for 10 of 15 minutes (`-wex-no-gpu-panic`), coherent scanout and the larger display buffer that scaled modes need (`-wex-no-scanout-coherent`, `-wex-no-hidpi-dbuf`), the HDR switch for a monitor on USB-C (`-wex-no-hdr-modes`, `-wex-no-hdr-sgx`); HybridPM's turbo (`-nohpm`) and its autonomous clock (`hpmauto=0`); Wi-Fi 6 on the MT7920 (`-mtknohe`) and its PCIe link kept out of ASPM (`-mtkallowaspm`).
+
+Off by default, with a boot-arg that turns it on: `nvrtd3=2`, the RTX's power-off when it is idle, which also needs `SSDT-PEGP-PINS-ANV` enabled ([README](../README.md#rtx-power-off)).
 
 ## Picker and quirks of the `full` profile
 
@@ -115,8 +120,8 @@ Lost at each restart: panic reports, the variables macOS writes (the volume of t
 
 - the identity;
 - 15 keys an editor had dropped, put back with the value OpenCore 1.0.9 uses when they are absent, so that `ocvalidate` passes: same behaviour. Among them `FixupAppleEfiImages`, `false` because that is what its absence meant in the tests. `InitialMode` is `Auto`: an empty one is illegal for `ocvalidate`;
-- `-liludbg liludump=90`, Lilu's debugging log, left out;
-- sleep in S0, left out: the tables `SSDT-DEEPIDLE` and `SSDT-PWRB-QE0` and the ACPI patch that renames `_QE0` to `XQE0` for the second one. The tested EFI carries them as a trial, but no S0 sleep was tested, and the first table comes from another project whose licence was not read;
+- NMAppFree and AMFIPass, disabled in the tested EFI, left out: with AMFI on, NMLibVal takes their place;
+- `SSDT-PEGP-PINS-ANV`, published off, is not in the tested EFI: it is the table of the RTX's power-off, see above;
 - the comments, the driver's in English.
 
 Among the binaries, everything downloaded matches the test machine byte for byte, except:
@@ -124,10 +129,9 @@ Among the binaries, everything downloaded matches the test machine byte for byte
 | File | Difference |
 | --- | --- |
 | `AirportItlwm` | Tested: build `738d4c6`. Downloaded: `7204c69`, because the `v2.4.0-alpha` release was published again and the old build is gone. **Not tested** |
-| `Lilu`, `WhateverXe`, `IntelHybridCores`, `AppleALC`, `NMHDA`, `SMCNvidiaGPU`, `HybridPM`, `NitroEC`, `IDispHDA`, `AirportMtkWlan`, `SimpleMtkBtPatcher`, `BTLEAdvFixup`, `NMAppFree`, `USBDiskKeeper` | Compiled by you, from the latest commit of the forks, of NMAppFree and of USBKeeper: see [postinstall/README.md](../postinstall/README.md). At the commits last tested ten of them come out as the files of the test machine; `WhateverXe`, `IntelHybridCores`, `AirportMtkWlan` and `BTLEAdvFixup` hold the same code and differ in names of diagnostics, debug map, version string or UUID, as that page says. `AirportMtkWlan` holds MediaTek's firmware: do not publish it |
-| `SimpleMtkBtFw` | The `Info.plist` gets the USB match of this laptop's Bluetooth, the same as on the test machine |
+| `Lilu`, `WhateverXe`, `IntelHybridCores`, `AppleALC`, `NMHDA`, `SMCNvidiaGPU`, `HybridPM`, `NitroEC`, `IDispHDA`, `AirportMtkWlan`, `SimpleMtkBtPatcher`, `SimpleMtkBtFw`, `BTLEAdvFixup`, `USBDiskKeeper` | Compiled by you, in release, from the latest commit of the forks and of USBKeeper: see [postinstall/README.md](../postinstall/README.md). At the commits last tested nine of them come out as the files of the test machine; `Lilu`, `WhateverXe`, `IntelHybridCores`, `AirportMtkWlan` and `BTLEAdvFixup` hold the same code and differ in names of diagnostics, debug map, version string or UUID, as that page says. `AirportMtkWlan` holds MediaTek's firmware: do not publish it |
+| `NMLibVal` | None: the kext that ran, from this repository |
 | `UTBMap-ANV`, `EHD0Off-ANV`, `AppleALC`, `HybridPM` | Only comment strings in their `Info.plist` |
-| `SSDT-DEEPIDLE.aml`, `SSDT-PWRB-QE0.aml` | Only in the tested EFI: sleep in S0, see above |
 
 The tested folder also has `Tools/` and `Resources/`, which the `Builtin` picker does not use, an older config and four text notes. Nothing else differs.
 
