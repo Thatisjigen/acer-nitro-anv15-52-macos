@@ -17,7 +17,7 @@
    "url": "https://github.com/Thatisjigen/nvidia-macos-driver.git",
    "ref": "acer/current",
    "license": "PolyForm Noncommercial 1.0.0; translator LGPL-3.0",
-   "tested_commit": "c42ac8c37747ff9266e5b7be03eb7de028797a65"
+   "tested_commit": "eb088b8e50f265e6a81f8174e961669ac5b35b1d"
   },
   "WhateverXe": {
    "url": "https://github.com/Thatisjigen/WhateverXe.git",
@@ -64,7 +64,7 @@
   "SimpleMtkWlan": {
    "url": "https://github.com/Thatisjigen/SimpleMtkWlan.git",
    "ref": "acer/current",
-   "tested_commit": "ebca16d4bdfc09aa1d12a03b1a8ebe322205684b",
+   "tested_commit": "f8a935e7a5cc815fe8fe9dd62ce1dc9eb3aafaf3",
    "license": "GPL-2.0"
   },
   "SimpleMtkBtFw": {
@@ -336,14 +336,14 @@
    "sha256": "9daea091cdc5ba8f84bce3808cd62f38caae8fe7e4e92c1d9c9383b93a760b29"
   },
   "bundle/NVMTLDriver": {
-   "sha256": "4060f9de70ba238bafb1b75d406262601ed155c572eb91508624ed9710692f69",
+   "sha256": "3ca633087acac58d627bf6ed526e9c80bd31617102ec9395893987ad70d3d156",
    "note": "same code and UUID; what runs carries the seal of the bundle it is installed in",
-   "reference_sha256": "951e03d139cb141d6f20deae24c5baf5ac9d7c9cbe513b0d604c5f55c4d4ebdd"
+   "reference_sha256": "638d632f75a32080ffe5fe89d8a31c0fcf0b610aa9977b148d5ca3e84ce91e6b"
   },
   "bundle/libnvmtl_translate.dylib": {
-   "sha256": "90ef91bec23c7878b03bf8b77102188d46f81c26230a527c216b7e472cf7c78b",
+   "sha256": "0815bb06d6d80cde1465073b2ad40af87690001bb7b0347e2ae199cd6de39f7e",
    "note": "same sources; what runs keeps the paths of the folder it was built in, here they read /build/translator",
-   "reference_sha256": "6d2f5da173530d80c5d241d1606c3b2c0cfbcdcb8e1d41de7889545402d0ae06"
+   "reference_sha256": "d59ee42cde13ecf675b147867924bd28a1a4faad2858ad7b26b01d506325691f"
   },
   "bundle/libnvencvt.dylib": {
    "sha256": "b74c0bc6fc1fd6130f98e632228f8a9442bf8dc066574961fba99a315d6b4273",
@@ -402,9 +402,9 @@
    "sha256": "d6e59bfcffcd7f9d362f42662a364eb85374b9520dc413d8971bdb79bcdee0cc"
   },
   "AirportMtkWlan.kext/Contents/MacOS/AirportMtkWlan": {
-   "sha256": "b5b6e810ff6d555a5ac76f8748b0c1df4f8b14bc74a671a82b74ab6cdff83e4d",
+   "sha256": "e051ea0d29c743183b1d9331aa7de580bde14bff89012a904a7e7a55527bf5c5",
    "note": "the one that runs carries the short commit of the local branch it was built from in its version string; built with that string it is the same file",
-   "reference_sha256": "ec389e083b68b66b8dcbc80d86476f36963ac7eab9d27f9308293aad4ade1f27"
+   "reference_sha256": "fa87e0dd32922db00bc25bfa74cf6e09c01647aa521b087aa4dee913bdf1b4d7"
   },
   "SimpleMtkBtPatcher.kext/Contents/MacOS/SimpleMtkBtPatcher": {
    "sha256": "e75340e2f0097cdb1c43a2d9b435d4d8132425e69b5c896a7817e8a3b8c71c2f"
